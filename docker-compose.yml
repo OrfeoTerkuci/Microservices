@@ -5,6 +5,9 @@ services:
     build: ./src/backend
     ports:
       - "127.0.0.1:5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
   frontend:
     container_name: frontend
     build: ./
@@ -15,4 +18,35 @@ services:
       - ./src/frontend:/src/frontend
     # Override the default stop signal
     stop_signal: SIGKILL
-  
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    container_name: microservices-db
+    hostname: db  
+    build:
+        context: ./src/db
+        dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: "pg_isready -U '${APP_DB_USER}' -d '${APP_DB_NAME}' || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - host
+    volumes:
+      - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${APP_DB_USER}
+      - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
+      - POSTGRES_DB=${APP_DB_NAME}
+
+networks:
+  host: {}
+
+volumes:
+  db-data: {}
