@@ -1,0 +1,6 @@
+services:
+  frontend:
+    build: ./src/frontend
+    ports:
+      - 5000:5000
+  
