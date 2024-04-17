@@ -1,9 +1,17 @@
+name: microservices
 services:
-  # frontend:
-  #   build: ./src/frontend
-  #   ports:
-  #     - 8080:8080
   backend:
     build: ./src/backend
     ports:
-      - 5000:5000
+      - "127.0.0.1:5000:5000"
+  frontend:
+    container_name: frontend
+    build: ./
+    command: ["bash", "-c", "npm install && npm run dev"]
+    ports:
+      - 8080:8080
+    volumes:
+      - ./src/frontend:/src/frontend
+    # Override the default stop signal
+    stop_signal: SIGKILL
+  
