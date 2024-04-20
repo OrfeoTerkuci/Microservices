@@ -31,6 +31,7 @@
     - [ ] Database for authentication service
     - [ ] Database for events service
     - [ ] Database for calendar service
+    - [ ] Database for invitation service
 - [ ] Frontend
   - [ ] Create a frontend for the application
   - [ ] Use the frontend to interact with the services
