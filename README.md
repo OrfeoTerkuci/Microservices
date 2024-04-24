@@ -57,7 +57,6 @@
   - [ ] Run script `./run.sh` that starts all services
   - [ ] Report
 
-
 ## Application-Level Foreign Keys in Microservices Architecture
 
 Sure, here are some tips for implementing application-level foreign keys in a microservices architecture:
