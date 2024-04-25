@@ -6,9 +6,9 @@ services:
     build: ./src/frontend_legacy
     ports:
       - "127.0.0.1:5000:5000"
-    depends_on:
-      db:
-        condition: service_healthy
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
   
   frontend:
     container_name: frontend
@@ -20,20 +20,18 @@ services:
       - ./src/frontend:/src/frontend
     # Override the default stop signal
     stop_signal: SIGKILL
-    depends_on:
-      db:
-        condition: service_healthy
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
   
-  db:
-    container_name: microservices-db
-    hostname: db  
-    build:
-        context: ./src/db
-        dockerfile: Dockerfile
+  users-db:
+    container_name: microservices-users-db
+    hostname: db
+    image: postgres:16.2-bookworm
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: "pg_isready -U '${APP_DB_USER}' -d '${APP_DB_NAME}' || exit 1"
+      test: "pg_isready -U '${APP_DB_USER}' -d '${USERS_DB_NAME}' || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,14 +40,111 @@ services:
       - host
     volumes:
       - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
-      - db-data:/var/lib/postgresql/data
+      - ./src/db/users_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-users-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${APP_DB_USER}
       - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
-      - POSTGRES_DB=${APP_DB_NAME}
+      - POSTGRES_DB=${USERS_DB_NAME}
+
+  events-db:
+    container_name: microservices-events-db
+    hostname: db  
+    image: postgres:16.2-bookworm
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: "pg_isready -U '${APP_DB_USER}' -d '${EVENTS_DB_NAME}' || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - host
+    volumes:
+      - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./src/db/events_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-events-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${APP_DB_USER}
+      - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
+      - POSTGRES_DB=${EVENTS_DB_NAME}
+
+  invites-db:
+    container_name: microservices-invites-db
+    hostname: db  
+    image: postgres:16.2-bookworm
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: "pg_isready -U '${APP_DB_USER}' -d '${INVITES_DB_NAME}' || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - host
+    volumes:
+      - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./src/db/invites_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-invites-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${APP_DB_USER}
+      - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
+      - POSTGRES_DB=${INVITES_DB_NAME}
+
+  participation-db:
+    container_name: microservices-participation-db
+    hostname: db  
+    image: postgres:16.2-bookworm
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: "pg_isready -U '${APP_DB_USER}' -d '${PARTICIPATION_DB_NAME}' || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - host
+    volumes:
+      - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./src/db/invites_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-participation-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${APP_DB_USER}
+      - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
+      - POSTGRES_DB=${PARTICIPATION_DB_NAME}
+
+  calendars-db:
+    container_name: microservices-calendars-db
+    hostname: db  
+    image: postgres:16.2-bookworm
+    ports:
+      - "127.0.0.1:5435:5432"
+    healthcheck:
+      test: "pg_isready -U '${APP_DB_USER}' -d '${CALENDARS_DB_NAME}' || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - host
+    volumes:
+      - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./src/db/calendars_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-calendars-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${APP_DB_USER}
+      - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
+      - POSTGRES_DB=${CALENDARS_DB_NAME}
 
 networks:
   host: {}
 
 volumes:
-  db-data: {}
+  db-users-data: {}
+  db-events-data: {}
+  db-invites-data: {}
+  db-participation-data: {}
+  db-calendars-data: {}
