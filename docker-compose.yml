@@ -20,9 +20,9 @@ services:
       - ./frontend:/frontend
     # Override the default stop signal
     stop_signal: SIGKILL
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
+    depends_on:
+      db:
+        condition: service_healthy
 
   users-db:
     container_name: microservices-users-db
