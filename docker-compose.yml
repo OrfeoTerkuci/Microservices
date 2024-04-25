@@ -98,7 +98,7 @@ services:
     hostname: db  
     image: postgres:16.2-bookworm
     ports:
-      - "127.0.0.1:5434:5432"
+      - "127.0.0.1:5435:5432"
     healthcheck:
       test: "pg_isready -U '${APP_DB_USER}' -d '${PARTICIPATION_DB_NAME}' || exit 1"
       interval: 10s
@@ -109,7 +109,7 @@ services:
       - host
     volumes:
       - ./src/db/postgresql.conf:/etc/postgresql/postgresql.conf
-      - ./src/db/invites_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/db/participation_db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db-participation-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${APP_DB_USER}
@@ -121,7 +121,7 @@ services:
     hostname: db  
     image: postgres:16.2-bookworm
     ports:
-      - "127.0.0.1:5435:5432"
+      - "127.0.0.1:5436:5432"
     healthcheck:
       test: "pg_isready -U '${APP_DB_USER}' -d '${CALENDARS_DB_NAME}' || exit 1"
       interval: 10s
