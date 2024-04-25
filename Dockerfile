@@ -1,8 +1,8 @@
 FROM node:21.7.1-bookworm
 
-WORKDIR /src/frontend
+WORKDIR /frontend
 
-COPY src/frontend .
+COPY frontend .
 
 RUN npm install
 
