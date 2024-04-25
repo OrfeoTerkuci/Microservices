@@ -10,16 +10,16 @@ services:
   #   db:
   #     condition: service_healthy
 
-  # frontend:
-  #   container_name: frontend
-  #   build: ./
-  #   command: ["bash", "-c", "npm install && npm run dev"]
-  #   ports:
-  #     - 8080:8080
-  #   volumes:
-  #     - ./frontend:/frontend
-  #   # Override the default stop signal
-  #   stop_signal: SIGKILL
+  frontend:
+    container_name: frontend
+    build: ./
+    command: ["bash", "-c", "npm install && npm run dev"]
+    ports:
+      - 8080:8080
+    volumes:
+      - ./frontend:/frontend
+    # Override the default stop signal
+    stop_signal: SIGKILL
     # depends_on:
     #   db:
     #     condition: service_healthy
