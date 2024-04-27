@@ -28,7 +28,12 @@ services:
     container_name: auth-service
     build: ./backend/src/services/auth/
     ports:
-      - 8000:8000
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./backend/src/services/auth:/auth
     networks:
