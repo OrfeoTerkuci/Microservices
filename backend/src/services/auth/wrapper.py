@@ -66,19 +66,14 @@ def get_db_url() -> URL:
     )
 
 
-try:
-    session_maker = sessionmaker(bind=create_engine(get_db_url()))
-    session = session_maker()
-except RuntimeError as exc:
-    # Temporary ugly fix to not crash testing
-    session = Session()
-
-
 def get_session() -> Session:
+    try:
+        session_maker = sessionmaker(bind=create_engine(get_db_url()))
+        session = session_maker()
+    except RuntimeError as exc:
+        # Temporary ugly fix to not crash testing
+        session = Session()
     return session
-
-
-session = get_session()
 
 
 class Base(DeclarativeBase):
@@ -129,6 +124,7 @@ def create_user(
 
     :return: The created UserModel instance.
     """
+    session = get_session()
     if session.query(UserModel).filter(UserModel.username == username).first():
         raise ValueError("User already exists")
 
@@ -157,7 +153,7 @@ def find_user(
     """
     if not username and not user_id:
         raise ValueError("No username or id provided")
-
+    session = get_session()
     try:
         user = (
             (session.query(UserModel).filter(UserModel.username == username).first())
@@ -183,6 +179,7 @@ def get_all_users() -> list[UserModel]:
 
     :return: List of all UserModel instances.
     """
+    session = get_session()
     try:
         return session.query(UserModel).all()
     except OperationalError as se:
@@ -200,6 +197,7 @@ def update_user(user_id: int, **kwargs: Any) -> UserModel:
 
     :return: The updated UserModel instance.
     """
+    session = get_session()
 
     if not (user := session.query(UserModel).filter(UserModel.id == user_id).first()):
         raise ValueError(f"User with ID {user_id} not found in the database")
@@ -221,6 +219,7 @@ def delete_user(user_id: int) -> None:
     :param user_id: ID of the user to delete.
     :raises ValueError: If the user with the given ID is not found in the database
     """
+    session = get_session()
 
     if not (user := session.query(UserModel).filter(UserModel.id == user_id).first()):
         raise ValueError(f"User with ID {user_id} not found in the database")
@@ -241,6 +240,8 @@ def add_token(token: str, user_id: int) -> None:
 
     :raises ValueError: If the token already exists in the database.
     """
+    session = get_session()
+
     if session.query(TokenModel).filter(TokenModel.token == token).first():
         raise ValueError(f"Token {token} already exists in the database")
     try:
@@ -260,6 +261,8 @@ def blacklist_token(token_value: str) -> None:
 
     :raises ValueError: If the token does not exist in the database.
     """
+    session = get_session()
+
     # check if token exists
     try:
         if not (
@@ -289,6 +292,8 @@ def get_user_tokens(u_id: int) -> list[TokenModel]:
 
     :return: List of all TokenModel instances.
     """
+    session = get_session()
+
     try:
         return session.query(TokenModel).filter(TokenModel.user_id == u_id).all()
     except OperationalError as se:
@@ -303,6 +308,8 @@ def get_all_tokens() -> list[TokenModel]:
 
     :return: List of all TokenModel instances.
     """
+    session = get_session()
+
     try:
         return session.query(TokenModel).all()
     except OperationalError as se:
@@ -319,6 +326,8 @@ def get_token(token: str) -> TokenModel | None:
 
     :return: TokenModel instance.
     """
+    session = get_session()
+
     try:
         return session.query(TokenModel).filter(TokenModel.token == token).first()
     except OperationalError as se:
