@@ -21,7 +21,8 @@ from sqlalchemy.orm import DeclarativeBase, relationship, Session, sessionmaker
 
 
 def get_env(var: str) -> str:
-    """Return value of an environment variable, raise exception if not defined or empty.
+    """
+    Return value of an environment variable, raise exception if not defined or empty.
 
     :param var: The name of the environment variable to retrieve.
 
@@ -34,7 +35,8 @@ def get_env(var: str) -> str:
 
 
 def get_db_url() -> URL:
-    """Build and return the database URL to connect with postgres.
+    """
+    Build and return the database URL to connect with postgres.
 
     :returns: An SQLAlchemy URL object to connect with the appdb.
     :raises RuntimeError: In case of missing or incorrectly configured env vars.
@@ -53,8 +55,6 @@ def get_db_url() -> URL:
         port = int(port_raw)
     except ValueError as exc:
         raise RuntimeError(f"Invalid APP_DB_PORT: {port_raw}") from exc
-    # Using SQLAlchemy's URL object means the password (and other fields)
-    # don't need to be escaped
 
     return URL.create(
         drivername="postgresql+psycopg2",
@@ -82,7 +82,9 @@ session = get_session()
 
 
 class Base(DeclarativeBase):
-    """Base class for model class"""
+    """
+    Base class for model class
+    """
 
 
 class UserModel(Base):
