@@ -13,13 +13,15 @@ import jwt
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from wrapper_auth import get_all_users, get_token, find_user, UserModel
+from wrapper import find_user, get_all_users, get_token, UserModel
+
 # Constants
 # openssl rand -hex 32
 SECRET_KEY = "f3c141d132a72394ff1a30d814c71216b6b8a5cc581fb233297e4ef3a8dcf7ad"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 LOWEST_ROLE = "default"
+
 
 class Token(BaseModel):
     """
@@ -41,6 +43,7 @@ class TokenData(BaseModel):
 # oauth2_scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
+
 def create_access_token(data: dict[str, Any], expires_delta: datetime.timedelta) -> Any:
     """
     Create access token.
@@ -58,6 +61,7 @@ def create_access_token(data: dict[str, Any], expires_delta: datetime.timedelta)
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 # helper functions
 def create_user_token(username: str, password: str) -> str:
     """
@@ -73,6 +77,7 @@ def create_user_token(username: str, password: str) -> str:
         expires_delta=access_token_expires,
     )
     return str(access_token)
+
 
 def verify_password(plain_password: str, crypt_password: str) -> bool:
     """
@@ -106,7 +111,7 @@ def authenticate_user(username: str, password: str) -> Optional[UserModel]:
     users = get_all_users()
 
     for user in users:
-        if user.username == username and verify_password(password, str(user.password)): # type: ignore
+        if user.username == username and verify_password(password, str(user.password)):  # type: ignore
             return user
     return None
 
@@ -147,7 +152,7 @@ async def check_token_validity(token: str) -> None:
                 detail="Token not found",
             )
         # check if token is invalid
-        if not token_instance.valid: # type: ignore
+        if not token_instance.valid:  # type: ignore
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token is invalid",
