@@ -10,42 +10,63 @@ services:
   #   db:
   #     condition: service_healthy
 
-  frontend:
-    container_name: frontend
-    build: ./
-    command: ["bash", "-c", "npm install && npm run dev"]
-    ports:
-      - 8080:8080
-    volumes:
-      - ./frontend:/frontend
-    # Override the default stop signal
-    stop_signal: SIGKILL
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
+  # frontend:
+  #   container_name: frontend
+  #   build: ./
+  #   command: ["bash", "-c", "npm install && npm run dev"]
+  #   ports:
+  #     - 8080:8080
+  #   volumes:
+  #     - ./frontend:/frontend
+  #   # Override the default stop signal
+  #   stop_signal: SIGKILL
+  #   # depends_on:
+  #   #   db:
+  #   #     condition: service_healthy
 
-  users-db:
-    container_name: microservices-users-db
+  auth-service:
+    container_name: auth-service
+    build: ./backend/src/services/auth/
+    ports:
+      - 8000:8000
+    volumes:
+      - ./backend/src/services/auth:/auth
+    networks:
+      - host
+      - auth-db
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    environment:
+      - AUTH_DB_HOST=${AUTH_DB_HOST}
+      - AUTH_DB_NAME=${AUTH_DB_NAME}
+      - AUTH_DB_USER=${APP_DB_USER}
+      - AUTH_DB_PASSWORD=${APP_DB_PASSWORD}
+      - AUTH_DB_PORT=5432
+
+  auth-db:
+    container_name: microservices-auth-db
     hostname: db
     image: postgres:16.2-bookworm
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: "pg_isready -U '${APP_DB_USER}' -d '${USERS_DB_NAME}' || exit 1"
+      test: "pg_isready -U '${APP_DB_USER}' -d '${AUTH_DB_NAME}' || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
     networks:
-      - host
+      auth-db:
+        aliases: ["${AUTH_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
-      - ./db/users_db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - db-users-data:/var/lib/postgresql/data
+      - ./db/auth_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-auth-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${APP_DB_USER}
       - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
-      - POSTGRES_DB=${USERS_DB_NAME}
+      - POSTGRES_DB=${AUTH_DB_NAME}
 
   events-db:
     container_name: microservices-events-db
@@ -60,7 +81,8 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - host
+      events-db:
+        aliases: ["${EVENT_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./db/events_db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -83,7 +105,8 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - host
+      invites-db:
+        aliases: ["${INVITES_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./db/invites_db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -106,7 +129,8 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - host
+      participation-db:
+        aliases: ["${PARTICIPATION_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./db/participation_db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -129,7 +153,8 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - host
+      calendars-db:
+        aliases: ["${CALENDAR_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./db/calendars_db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -141,9 +166,15 @@ services:
 
 networks:
   host: {}
+  auth-db:
+    internal: true
+  events-db: {}
+  invites-db: {}
+  participation-db: {}
+  calendars-db: {}
 
 volumes:
-  db-users-data: {}
+  db-auth-data: {}
   db-events-data: {}
   db-invites-data: {}
   db-participation-data: {}
