@@ -202,9 +202,12 @@ networks:
     internal: true
   events-db:
     internal: true
-  invites-db: {}
-  participation-db: {}
-  calendars-db: {}
+  invites-db:
+    internal: true
+  participation-db:
+    internal: true
+  calendars-db:
+    internal: true
 
 volumes:
   db-auth-data: {}
