@@ -161,7 +161,7 @@ def login():
     # ================================
     response = requests.post(
         "http://auth-service:8000/api/auth/login",
-        json={"username": req_username, "password": req_password},
+        data={"username": req_username, "password": req_password},
     )
 
     success = response.status_code == 200
