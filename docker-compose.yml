@@ -51,12 +51,37 @@ services:
       - AUTH_DB_PASSWORD=${APP_DB_PASSWORD}
       - AUTH_DB_PORT=5432
 
+  events-service:
+    container_name: events-service
+    build: ./backend/src/services/events/
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./backend/src/services/events:/events
+    networks:
+      - host
+      - events-db
+    depends_on:
+      events-db:
+        condition: service_healthy
+    environment:
+      - EVENTS_DB_HOST=${EVENTS_DB_HOST}
+      - EVENTS_DB_NAME=${EVENTS_DB_NAME}
+      - EVENTS_DB_USER=${APP_DB_USER}
+      - EVENTS_DB_PASSWORD=${APP_DB_PASSWORD}
+      - EVENTS_DB_PORT=5432
+
   auth-db:
     container_name: microservices-auth-db
     hostname: db
     image: postgres:16.2-bookworm
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5432:5432" # Left side is external network, right side is internal network
     healthcheck:
       test: "pg_isready -U '${APP_DB_USER}' -d '${AUTH_DB_NAME}' || exit 1"
       interval: 10s
@@ -89,7 +114,7 @@ services:
     restart: unless-stopped
     networks:
       events-db:
-        aliases: ["${EVENT_DB_HOST?}"]
+        aliases: ["${EVENTS_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./db/events_db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -175,7 +200,8 @@ networks:
   host: {}
   auth-db:
     internal: true
-  events-db: {}
+  events-db:
+    internal: true
   invites-db: {}
   participation-db: {}
   calendars-db: {}
