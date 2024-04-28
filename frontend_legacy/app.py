@@ -159,7 +159,12 @@ def login():
     # microservice returns True if correct combination, False if otherwise.
     # Also pay attention to the status code returned by the microservice.
     # ================================
-    success = True  # TODO: call
+    response = requests.post(
+        "http://auth-service:8000/api/auth/login",
+        json={"username": req_username, "password": req_password},
+    )
+
+    success = response.status_code == 200
 
     save_to_session("success", success)
     if success:
@@ -185,7 +190,13 @@ def register():
     # Registration is successful if a user with the same username doesn't exist yet.
     # ================================
 
-    success = True  # TODO: call
+    response = requests.post(
+        "http://auth-service:8000/api/auth/register",
+        json={"username": req_username, "password": req_password},
+    )
+
+    success = response.status_code == 200
+
     save_to_session("success", success)
 
     if success:
