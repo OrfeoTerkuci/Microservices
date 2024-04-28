@@ -132,7 +132,7 @@ def create_user(
     try:
         session.add(new_user)
         session.commit()
-        return new_user
+        return UserModel(username=username, password=password, id=new_user.id)
     except IntegrityError as exc_inner:
         session.rollback()
         raise ValueError("Error creating user") from exc_inner
@@ -168,7 +168,7 @@ def find_user(
             f"User with username {username} and id {user_id} not found in the database"
         )
 
-    return user
+    return UserModel(username=user.username, password=user.password, id=user.id)
 
 
 def get_all_users() -> list[UserModel]:
@@ -181,7 +181,11 @@ def get_all_users() -> list[UserModel]:
     """
     session = get_session()
     try:
-        return session.query(UserModel).all()
+        users = session.query(UserModel).all()
+        return [
+            UserModel(username=user.username, password=user.password, id=user.id)
+            for user in users
+        ]
     except OperationalError as se:
         raise ValueError("Error getting users:", se) from se
 
@@ -207,7 +211,7 @@ def update_user(user_id: int, **kwargs: Any) -> UserModel:
             setattr(user, key, value)
     try:
         session.commit()
-        return user
+        return UserModel(username=user.username, password=user.password, id=user.id)
     except IntegrityError as exc_inner:
         session.rollback()
         raise ValueError("Error updating user") from exc_inner
@@ -295,7 +299,13 @@ def get_user_tokens(u_id: int) -> list[TokenModel]:
     session = get_session()
 
     try:
-        return session.query(TokenModel).filter(TokenModel.user_id == u_id).all()
+        tokens = session.query(TokenModel).filter(TokenModel.user_id == u_id).all()
+        return [
+            TokenModel(
+                id=token.id, token=token.token, user_id=token.user_id, valid=token.valid
+            )
+            for token in tokens
+        ]
     except OperationalError as se:
         raise ValueError("Error getting tokens:", se) from se
 
@@ -311,7 +321,13 @@ def get_all_tokens() -> list[TokenModel]:
     session = get_session()
 
     try:
-        return session.query(TokenModel).all()
+        tokens = session.query(TokenModel).all()
+        return [
+            TokenModel(
+                id=token.id, token=token.token, user_id=token.user_id, valid=token.valid
+            )
+            for token in tokens
+        ]
     except OperationalError as se:
         raise ValueError("Error getting tokens:", se) from se
 
@@ -329,6 +345,16 @@ def get_token(token: str) -> TokenModel | None:
     session = get_session()
 
     try:
-        return session.query(TokenModel).filter(TokenModel.token == token).first()
+        ret_token = session.query(TokenModel).filter(TokenModel.token == token).first()
+        return (
+            TokenModel(
+                id=ret_token.id,
+                token=ret_token.token,
+                user_id=ret_token.user_id,
+                valid=ret_token.valid,
+            )
+            if ret_token
+            else None
+        )
     except OperationalError as se:
         raise ValueError("Error getting token:", se) from se
