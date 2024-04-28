@@ -1,5 +1,5 @@
 """
-This file contains the security routes for the FastAPI application.
+This file contains the authentication routes for the FastAPI application.
 """
 
 import auth
