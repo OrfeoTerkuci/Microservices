@@ -5,6 +5,7 @@ This file contains the security routes for the FastAPI application.
 import auth
 import users
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Authentication Service API",
@@ -13,6 +14,15 @@ app = FastAPI(
     redoc_url=None,
     openapi_url="/openapi.json",
     root_path="/api",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
