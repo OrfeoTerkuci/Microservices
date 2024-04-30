@@ -48,9 +48,10 @@ def home():
 
 @app.route("/event", methods=["POST"])
 def create_event():
-    title, description, publicprivate, invites = (
+    title, description, date, publicprivate, invites = (
         request.form["title"],
         request.form["description"],
+        request.form["date"],
         request.form["publicprivate"],
         request.form["invites"],
     )
