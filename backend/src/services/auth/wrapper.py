@@ -4,7 +4,7 @@
 """
 
 import os
-from typing import Any, Union
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -54,7 +54,7 @@ def get_db_url() -> URL:
     try:
         port = int(port_raw)
     except ValueError as exc:
-        raise RuntimeError(f"Invalid APP_DB_PORT: {port_raw}") from exc
+        raise RuntimeError(f"Invalid AUTH_DB_PORT: {port_raw}") from exc
 
     return URL.create(
         drivername="postgresql+psycopg2",
@@ -139,7 +139,7 @@ def create_user(
 
 
 def find_user(
-    username: Union[str, None] = None, user_id: Union[int, None] = None
+    username: str | None = None, user_id: int | None = None
 ) -> UserModel:
     """
     Finds a user based on its username and/or id.
