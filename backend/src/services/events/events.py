@@ -168,3 +168,55 @@ async def remove_event(event_id: int):
             content=json.dumps({"error": str(e)}),
             media_type="application/json",
         )
+
+
+@router.put("/{event_id}")
+async def modify_event(event_id: int, event: EventModel):
+    """
+    Update an event by its id.
+    """
+    try:
+        existing_event = find_event(event_id)
+        if not existing_event:
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Event not found"}),
+                media_type="application/json",
+            )
+        response = httpx.get(f"http://auth-service:8000/api/users/{event.organizerId}")
+        if response.status_code != 200:
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Organizer not found"}),
+                media_type="application/json",
+            )
+        update_event(
+            event_id=event_id,
+            title=event.title,
+            description=event.description,
+            date=event.date,
+            organizerId=event.organizerId,
+            isPublic=event.isPublic,
+        )
+        return Response(
+            status_code=status.HTTP_200_OK,
+            content=json.dumps(
+                {
+                    "event": {
+                        "id": event_id,
+                        "title": event.title,
+                        "description": event.description,
+                        "date": str(event.date),
+                        "organizerId": event.organizerId,
+                        "isPublic": event.isPublic,
+                    }
+                }
+            ),
+            media_type="application/json",
+        )
+    except Exception as e:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": str(e)}),
+            media_type="application/json",
+        )
