@@ -182,7 +182,7 @@ def update_event(
     event_id: int,
     title: str,
     description: str,
-    date: str,
+    date: datetime.date,
     organizerId: int,
     isPublic: bool,
 ):
