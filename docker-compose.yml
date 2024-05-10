@@ -55,7 +55,7 @@ services:
     container_name: events-service
     build: ./backend/src/services/events/
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
