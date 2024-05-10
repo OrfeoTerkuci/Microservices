@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import events
 
 app = FastAPI(
-    title="Authentication Service API",
+    title="Events Service API",
     version="0.1.0",
     docs_url="/docs",
     redoc_url=None,
