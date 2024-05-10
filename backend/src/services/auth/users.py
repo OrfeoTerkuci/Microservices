@@ -1,8 +1,11 @@
 import json
-from pydantic import BaseModel
+
 from fastapi import APIRouter, Response, status
-from wrapper import get_all_users, find_user
+from pydantic import BaseModel
+from wrapper import find_user, get_all_users
+
 router = APIRouter()
+
 
 class UserModel(BaseModel):
     """
@@ -22,7 +25,14 @@ async def get_users() -> Response:
     """
     return Response(
         status_code=status.HTTP_200_OK,
-        content=json.dumps({"users": [user.username for user in get_all_users()]}),
+        content=json.dumps(
+            {
+                "users": [
+                    {"id": user.id, "username": user.username}
+                    for user in get_all_users()
+                ]
+            }
+        ),
     )
 
 
