@@ -1,3 +1,4 @@
+import datetime
 import os
 from typing import Any
 
@@ -5,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     create_engine,
+    Date,
     ForeignKey,
     SmallInteger,
     String,
@@ -82,16 +84,18 @@ class Event(Base):
     Event model class
     """
 
+    __tablename__ = "events"
+
     id = Column(SmallInteger, primary_key=True, autoincrement=True, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    date = Column(String, nullable=False)
+    date = Column(Date, nullable=False)
     organizerId = Column(SmallInteger, nullable=False)
     isPublic = Column(Boolean, nullable=False)
 
 
 def create_event(
-    title: str, description: str, date: str, organizerId: int, isPublic: bool
+    title: str, description: str, date: datetime.date, organizerId: int, isPublic: bool
 ) -> Any:
     """
     Create an event with the given parameters.
@@ -119,7 +123,14 @@ def create_event(
     except IntegrityError as exc:
         session.rollback()
         raise exc
-    return event
+    return Event(
+        id=event.id,
+        title=event.title,
+        description=event.description,
+        date=str(event.date),
+        organizerId=event.organizerId,
+        isPublic=event.isPublic,
+    )
 
 
 def find_all_events() -> Any:
@@ -135,7 +146,7 @@ def find_all_events() -> Any:
             id=event.id,
             title=event.title,
             description=event.description,
-            date=event.date,
+            date=str(event.date),
             organizerId=event.organizerId,
             isPublic=event.isPublic,
         )
@@ -158,7 +169,7 @@ def find_event(event_id: int) -> Any:
             id=event.id,
             title=event.title,
             description=event.description,
-            date=event.date,
+            date=str(event.date),
             organizerId=event.organizerId,
             isPublic=event.isPublic,
         )
@@ -192,11 +203,11 @@ def update_event(
     event = session.query(Event).filter(Event.id == event_id).first()
     if not event:
         return
-    setattr(event, 'title', title)
-    setattr(event, 'description', description)
-    setattr(event, 'date', date)
-    setattr(event, 'organizerId', organizerId)
-    setattr(event, 'isPublic', isPublic)
+    setattr(event, "title", title)
+    setattr(event, "description", description)
+    setattr(event, "date", date)
+    setattr(event, "organizerId", organizerId)
+    setattr(event, "isPublic", isPublic)
     try:
         session.commit()
     except Exception as exc:
