@@ -39,7 +39,15 @@ def home():
         # Try to keep in mind failure of the underlying microservice
         # =================================
 
-        public_events = [("Test event", "Tomorrow", "Benjamin")]  # TODO: call
+        response = requests.get("http://events-service:8000/api/events/public")
+
+        if response.status_code == 200:
+            public_events = [
+                (event["title"], event["date"], event["organizer"])
+                for event in response.json()["events"]
+            ]
+        else:
+            public_events = []
 
         return render_template(
             "home.html", username=username, password=password, events=public_events
@@ -60,9 +68,10 @@ def create_event():
     #
     # Given some data, create an event and send out the invites.
     # ==========================
-    
+
     global username
-    
+
+    # Create the event
     response = requests.post(
         "http://events-service:8000/api/events/",
         json={
@@ -73,6 +82,21 @@ def create_event():
             "isPublic": publicprivate == "public",
         },
     )
+
+    # Send out the invites
+    if response.status_code == 201:
+        event_id = response.json()["event"]["id"]
+        for invitee in invites.split(";"):
+            if not invitee:
+                continue
+            requests.post(
+                "http://invites-service:8000/api/invites/",
+                json={
+                    "eventId": event_id,
+                    "username": invitee,
+                    "status": "PENDING",
+                },
+            )
 
     return redirect("/")
 
