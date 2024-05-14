@@ -1,8 +1,8 @@
 CREATE TYPE PARTICIPATION_STATUS AS ENUM ('YES', 'NO', 'MAYBE');
 CREATE TABLE "rsvp_responses" (
     "eventId" INTEGER NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "username" TEXT NOT NULL,
     "status" PARTICIPATION_STATUS NOT NULL DEFAULT 'MAYBE',
-    PRIMARY KEY ("eventId", "userId") -- FOREIGN KEY ("eventId") REFERENCES "events" ("id") ON DELETE CASCADE,
-    -- FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE
+    PRIMARY KEY ("eventId", "username") -- FOREIGN KEY ("eventId") REFERENCES "events" ("id") ON DELETE CASCADE,
+    -- FOREIGN KEY ("username") REFERENCES "users" ("username") ON DELETE CASCADE
 );
