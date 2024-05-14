@@ -13,7 +13,7 @@ services:
       watch:
         - action: sync
           path: ./frontend_legacy
-          target: ./
+          target: /app
   # depends_on:
   #   db:
   #     condition: service_healthy
