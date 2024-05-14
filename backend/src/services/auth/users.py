@@ -18,7 +18,7 @@ class UserModel(BaseModel):
 
 @router.get("")
 async def get_user(
-    user_id: int = Query(default=None), username: str = Query(default=None)
+    user_id: int = Query(default=None), username: str = Query(default=None, min_length=1)
 ) -> Response:
     """
     Get a user by its id.
@@ -34,6 +34,7 @@ async def get_user(
             return Response(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content=json.dumps({"error": str(e)}),
+                media_type="application/json",
             )
         return Response(
             status_code=status.HTTP_200_OK,
@@ -44,6 +45,7 @@ async def get_user(
                     ]
                 }
             ),
+            media_type="application/json",
         )
     try:
         user = find_user(user_id=user_id, username=username)
@@ -51,13 +53,16 @@ async def get_user(
         return Response(
             status_code=status.HTTP_404_NOT_FOUND,
             content=json.dumps({"error": str(e)}),
+            media_type="application/json",
         )
     if not user:
         return Response(
             status_code=status.HTTP_404_NOT_FOUND,
             content=json.dumps({"error": "User not found"}),
+            media_type="application/json",
         )
     return Response(
         status_code=status.HTTP_200_OK,
         content=json.dumps({"user": user.username}),
+        media_type="application/json",
     )
