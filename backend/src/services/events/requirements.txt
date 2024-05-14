@@ -2,8 +2,6 @@ fastapi
 pydantic
 sqlalchemy
 psycopg2-binary
-bcrypt
-PyJWT
 python-multipart
 uvicorn
 httpx
