@@ -60,6 +60,19 @@ def create_event():
     #
     # Given some data, create an event and send out the invites.
     # ==========================
+    
+    global username
+    
+    response = requests.post(
+        "http://events-service:8000/api/events/",
+        json={
+            "title": title,
+            "description": description,
+            "date": date,
+            "organizer": username,
+            "isPublic": publicprivate == "public",
+        },
+    )
 
     return redirect("/")
 
