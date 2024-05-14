@@ -1,13 +1,19 @@
 name: microservices
 services:
   # Legacy frontend
-  # frontend_legacy:
-  #   container_name: frontend_legacy
-  #   build: ./frontend_legacy
-  #   ports:
-  #     - "127.0.0.1:5000:5000"
-  #   networks:
-  #     - host
+  frontend_legacy:
+    container_name: frontend_legacy
+    build: ./frontend_legacy
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks:
+      - host
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend_legacy
+          target: ./
   # depends_on:
   #   db:
   #     condition: service_healthy
