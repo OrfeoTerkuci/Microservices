@@ -1,13 +1,13 @@
 name: microservices
 services:
   # Legacy frontend
-  frontend_legacy:
-    container_name: frontend_legacy
-    build: ./frontend_legacy
-    ports:
-      - "127.0.0.1:5000:5000"
-    networks:
-      - host
+  # frontend_legacy:
+  #   container_name: frontend_legacy
+  #   build: ./frontend_legacy
+  #   ports:
+  #     - "127.0.0.1:5000:5000"
+  #   networks:
+  #     - host
   # depends_on:
   #   db:
   #     condition: service_healthy
@@ -75,6 +75,31 @@ services:
       - EVENTS_DB_USER=${APP_DB_USER}
       - EVENTS_DB_PASSWORD=${APP_DB_PASSWORD}
       - EVENTS_DB_PORT=5432
+
+  invites-service:
+    container_name: invites-service
+    build: ./backend/src/services/invites/
+    ports:
+      - "127.0.0.1:8002:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./backend/src/services/invites:/invites
+    networks:
+      - host
+      - invites-db
+    depends_on:
+      invites-db:
+        condition: service_healthy
+    environment:
+      - INVITES_DB_HOST=${INVITES_DB_HOST}
+      - INVITES_DB_NAME=${INVITES_DB_NAME}
+      - INVITES_DB_USER=${APP_DB_USER}
+      - INVITES_DB_PASSWORD=${APP_DB_PASSWORD}
+      - INVITES_DB_PORT=5432
 
   auth-db:
     container_name: microservices-auth-db
