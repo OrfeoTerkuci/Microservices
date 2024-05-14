@@ -11,6 +11,8 @@ from wrapper import (
     delete_invite,
     find_all_invites,
     find_invite,
+    find_invites_by_event,
+    find_invites_by_user,
     INVITE_STATUS,
     update_invite,
 )
@@ -19,20 +21,30 @@ router = APIRouter()
 
 
 class InviteModel(BaseModel):
-    eventId: str
+    eventId: int
     username: str
     status: INVITE_STATUS
+
+
+def check_user_exists(username: str):
+    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
+    return response.status_code == 200
+
+
+def check_event_exists(eventId: int):
+    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
+    return response.status_code == 200
 
 
 @router.get("")
 def get_invite(
     username: str = Query(default=None, description="User's username"),
-    eventId: str = Query(default=None, description="Event's ID"),
+    eventId: int = Query(default=None, description="Event's ID"),
 ):
     """
     Get invite by user and event ID
     """
-    if not (username and eventId):
+    if not (username or eventId):
         invites = find_all_invites()
         return Response(
             content=json.dumps(
@@ -49,23 +61,9 @@ def get_invite(
             ),
             media_type="application/json",
         )
-    # check if the user and event exist
+    if username and eventId:
+        # Search for a specific invite
 
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    if response.status_code != 200:
-        return Response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content=json.dumps({"error": "User not found"}),
-            media_type="application/json",
-        )
-    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
-    if response.status_code != 200:
-        return Response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content=json.dumps({"error": "Event not found"}),
-            media_type="application/json",
-        )
-    try:
         invite = find_invite(eventId, username)
         if not invite:
             return Response(
@@ -76,19 +74,54 @@ def get_invite(
         return Response(
             content=json.dumps(
                 {
-                    "eventId": invite.eventId,
-                    "username": invite.username,
-                    "status": invite.status,
+                    f"invites": {
+                        "eventId": invite.eventId,
+                        "username": invite.username,
+                        "status": invite.status,
+                    }
                 }
             ),
             media_type="application/json",
         )
-    except Exception as exc:
+    elif username:
+        invites = find_invites_by_user(username)
         return Response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=json.dumps({"error": str(exc)}),
+            content=json.dumps(
+                {
+                    "invites": [
+                        {
+                            "eventId": invite.eventId,
+                            "username": invite.username,
+                            "status": invite.status,
+                        }
+                        for invite in invites
+                    ]
+                }
+            ),
             media_type="application/json",
         )
+    elif eventId:
+        invites = find_invites_by_event(eventId)
+        return Response(
+            content=json.dumps(
+                {
+                    "invites": [
+                        {
+                            "eventId": invite.eventId,
+                            "username": invite.username,
+                            "status": invite.status,
+                        }
+                        for invite in invites
+                    ]
+                }
+            ),
+            media_type="application/json",
+        )
+    return Response(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=json.dumps({"error": "Invalid request"}),
+        media_type="application/json",
+    )
 
 
 @router.post("")
@@ -99,17 +132,13 @@ def add_invite(invite: InviteModel):
     try:
         # check if the user and event exist
 
-        response = httpx.get(
-            f"http://auth-service:8000/api/users?username={invite.username}"
-        )
-        if response.status_code != 200:
+        if not check_user_exists(invite.username):
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content=json.dumps({"error": "User not found"}),
                 media_type="application/json",
             )
-        response = httpx.get(f"http://events-service:8000/api/events/{invite.eventId}")
-        if response.status_code != 200:
+        if not check_event_exists(invite.eventId):
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content=json.dumps({"error": "Event not found"}),
@@ -123,7 +152,7 @@ def add_invite(invite: InviteModel):
                     "event": {
                         "eventId": invite.eventId,
                         "username": invite.username,
-                        "status": invite.status,
+                        "status": invite.status.value,
                     }
                 }
             ),
@@ -143,24 +172,6 @@ def update_invite_status(invite: InviteModel):
     Update invite status
     """
     try:
-        # Check if user and event still exist
-
-        response = httpx.get(
-            f"http://auth-service:8000/api/users?username={invite.username}"
-        )
-        if response.status_code != 200:
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "User not found"}),
-                media_type="application/json",
-            )
-        response = httpx.get(f"http://events-service:8000/api/events/{invite.eventId}")
-        if response.status_code != 200:
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Event not found"}),
-                media_type="application/json",
-            )
         update_invite(invite.eventId, invite.username, invite.status)
         return Response(
             status_code=status.HTTP_200_OK,

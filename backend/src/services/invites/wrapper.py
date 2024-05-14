@@ -9,6 +9,7 @@ from sqlalchemy import (
     create_engine,
     Date,
     ForeignKey,
+    Integer,
     SmallInteger,
     String,
     URL,
@@ -42,18 +43,18 @@ def get_db_url() -> URL:
     """
     # Read data from environment
 
-    user = get_env("EVENTS_DB_USER")
-    password = get_env("EVENTS_DB_PASSWORD")
-    host = get_env("EVENTS_DB_HOST")
-    port_raw = get_env("EVENTS_DB_PORT")
-    db = get_env("EVENTS_DB_NAME")
+    user = get_env("INVITES_DB_USER")
+    password = get_env("INVITES_DB_PASSWORD")
+    host = get_env("INVITES_DB_HOST")
+    port_raw = get_env("INVITES_DB_PORT")
+    db = get_env("INVITES_DB_NAME")
 
     # Convert port to number
 
     try:
         port = int(port_raw)
     except ValueError as exc:
-        raise RuntimeError(f"Invalid EVENTS_DB_PORT: {port_raw}") from exc
+        raise RuntimeError(f"Invalid INVITES_DB_PORT: {port_raw}") from exc
     return URL.create(
         drivername="postgresql+psycopg2",
         username=user,
@@ -95,14 +96,15 @@ class Invite(Base):
 
     __tablename__ = "invites"
 
-    eventId = Column(String, primary_key=True)
+    eventId = Column(SmallInteger, primary_key=True)
     username = Column(String, primary_key=True)
     status = Column(String, default=INVITE_STATUS.PENDING, nullable=False)
     # __table_args__ = PrimaryKeyConstraint("eventId", "username")
 
 
-def create_invite(eventId: str, username: str, status: INVITE_STATUS):
-    invite = Invite(eventId=eventId, username=username, status=status)
+def create_invite(eventId: int, username: str, status: INVITE_STATUS):
+    invite = Invite(eventId=eventId, username=username, status=status.value)
+
     session = get_session()
     session.add(invite)
     try:
@@ -122,9 +124,15 @@ def find_all_invites():
     ]
 
 
-def find_invite(eventId: str, username: str):
+def find_invite(eventId: int, username: str):
+    if not (eventId or username):
+        return None
     session = get_session()
-    invite = session.query(Invite).get((eventId, username))
+    invite = (
+        session.query(Invite)
+        .filter(Invite.eventId == eventId, Invite.username == username)
+        .first()
+    )
     return (
         Invite(eventId=invite.eventId, username=invite.username, status=invite.status)
         if invite
@@ -132,7 +140,25 @@ def find_invite(eventId: str, username: str):
     )
 
 
-def update_invite(eventId: str, username: str, status: INVITE_STATUS):
+def find_invites_by_event(eventId: int):
+    session = get_session()
+    invites = session.query(Invite).filter(Invite.eventId == eventId).all()
+    return [
+        Invite(eventId=invite.eventId, username=invite.username, status=invite.status)
+        for invite in invites
+    ]
+
+
+def find_invites_by_user(username: str):
+    session = get_session()
+    invites = session.query(Invite).filter(Invite.username == username).all()
+    return [
+        Invite(eventId=invite.eventId, username=invite.username, status=invite.status)
+        for invite in invites
+    ]
+
+
+def update_invite(eventId: int, username: str, status: INVITE_STATUS):
     session = get_session()
     invite = session.query(Invite).get((eventId, username))
     if invite:
@@ -144,7 +170,8 @@ def update_invite(eventId: str, username: str, status: INVITE_STATUS):
             raise exc
     return
 
-def delete_invite(eventId: str, username: str):
+
+def delete_invite(eventId: int, username: str):
     session = get_session()
     invite = session.query(Invite).get((eventId, username))
     if invite:
