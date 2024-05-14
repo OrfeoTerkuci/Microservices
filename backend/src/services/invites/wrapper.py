@@ -162,7 +162,7 @@ def update_invite(eventId: int, username: str, status: INVITE_STATUS):
     session = get_session()
     invite = session.query(Invite).get((eventId, username))
     if invite:
-        setattr(invite, "status", status)
+        setattr(invite, "status", status.value)
         try:
             session.commit()
         except Exception as exc:
