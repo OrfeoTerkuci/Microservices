@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Query, Response, status
 from pydantic import BaseModel
 from wrapper import find_user, get_all_users
 
@@ -16,35 +16,42 @@ class UserModel(BaseModel):
     password: str
 
 
-@router.get("/")
-async def get_users() -> Response:
-    """
-    Get all users.
-
-    :return: List of users
-    """
-    return Response(
-        status_code=status.HTTP_200_OK,
-        content=json.dumps(
-            {
-                "users": [
-                    {"id": user.id, "username": user.username}
-                    for user in get_all_users()
-                ]
-            }
-        ),
-    )
-
-
-@router.get("/{user_id}")
-async def get_user(user_id: int) -> Response:
+@router.get("")
+async def get_user(
+    user_id: int = Query(default=None), username: str = Query(default=None)
+) -> Response:
     """
     Get a user by its id.
 
     :param user_id: The id of the user.
     :return: The user with the given id.
     """
-    user = find_user(user_id=user_id)
+    # If no username or id is provided, return all users
+    if not user_id and not username:
+        try:
+            users = get_all_users()
+        except Exception as e:
+            return Response(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content=json.dumps({"error": str(e)}),
+            )
+        return Response(
+            status_code=status.HTTP_200_OK,
+            content=json.dumps(
+                {
+                    "users": [
+                        {"id": user.id, "username": user.username} for user in users
+                    ]
+                }
+            ),
+        )
+    try:
+        user = find_user(user_id=user_id, username=username)
+    except ValueError as e:
+        return Response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=json.dumps({"error": str(e)}),
+        )
     if not user:
         return Response(
             status_code=status.HTTP_404_NOT_FOUND,
