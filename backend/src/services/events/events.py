@@ -20,7 +20,7 @@ class EventModel(BaseModel):
     title: str
     description: str
     date: datetime.date = Field(..., description="Date in YYYY-MM-DD format")
-    organizerId: int
+    organizer: str
     isPublic: bool
 
 
@@ -40,7 +40,7 @@ async def get_events():
                             "title": event.title,
                             "description": event.description,
                             "date": event.date,
-                            "organizerId": event.organizerId,
+                            "organizer": event.organizer,
                             "isPublic": event.isPublic,
                         }
                         for event in find_all_events()
@@ -79,7 +79,7 @@ async def get_event(event_id: int):
                         "title": event.title,
                         "description": event.description,
                         "date": event.date,
-                        "organizerId": event.organizerId,
+                        "organizer": event.organizer,
                         "isPublic": event.isPublic,
                     }
                 }
@@ -100,9 +100,9 @@ async def add_event(event: EventModel):
     Create an event.
     """
     try:
-        # Check if the organizerId is valid
+        # Check if the organizer is valid
 
-        response = httpx.get(f"http://auth-service:8000/api/users/{event.organizerId}")
+        response = httpx.get(f"http://auth-service:8000/api/users?username={event.organizer}")
         if response.status_code != 200:
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -113,7 +113,7 @@ async def add_event(event: EventModel):
             title=event.title,
             description=event.description,
             date=event.date,
-            organizerId=event.organizerId,
+            organizer=event.organizer,
             isPublic=event.isPublic,
         )
 
@@ -128,7 +128,7 @@ async def add_event(event: EventModel):
                         "title": created_event.title,
                         "description": created_event.description,
                         "date": created_event.date,
-                        "organizerId": created_event.organizerId,
+                        "organizer": created_event.organizer,
                         "isPublic": created_event.isPublic,
                     }
                 }
@@ -183,7 +183,7 @@ async def modify_event(event_id: int, event: EventModel):
                 content=json.dumps({"error": "Event not found"}),
                 media_type="application/json",
             )
-        response = httpx.get(f"http://auth-service:8000/api/users/{event.organizerId}")
+        response = httpx.get(f"http://auth-service:8000/api/users?username={event.organizer}")
         if response.status_code != 200:
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -195,7 +195,7 @@ async def modify_event(event_id: int, event: EventModel):
             title=event.title,
             description=event.description,
             date=event.date,
-            organizerId=event.organizerId,
+            organizer=event.organizer,
             isPublic=event.isPublic,
         )
         return Response(
@@ -207,7 +207,7 @@ async def modify_event(event_id: int, event: EventModel):
                         "title": event.title,
                         "description": event.description,
                         "date": str(event.date),
-                        "organizerId": event.organizerId,
+                        "organizer": event.organizer,
                         "isPublic": event.isPublic,
                     }
                 }

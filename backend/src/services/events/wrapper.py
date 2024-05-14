@@ -90,12 +90,12 @@ class Event(Base):
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
     date = Column(Date, nullable=False)
-    organizerId = Column(SmallInteger, nullable=False)
+    organizer = Column(String, nullable=False)
     isPublic = Column(Boolean, nullable=False)
 
 
 def create_event(
-    title: str, description: str, date: datetime.date, organizerId: int, isPublic: bool
+    title: str, description: str, date: datetime.date, organizer: str, isPublic: bool
 ) -> Any:
     """
     Create an event with the given parameters.
@@ -103,7 +103,7 @@ def create_event(
     :param title: The title of the event.
     :param description: The description of the event.
     :param date: The date of the event.
-    :param organizerId: The id of the organizer.
+    :param organizer: The id of the organizer.
     :param isPublic: Whether the event is public or not.
 
     :returns: The created event.
@@ -113,7 +113,7 @@ def create_event(
         title=title,
         description=description,
         date=date,
-        organizerId=organizerId,
+        organizer=organizer,
         isPublic=isPublic,
     )
     session = get_session()
@@ -128,7 +128,7 @@ def create_event(
         title=event.title,
         description=event.description,
         date=str(event.date),
-        organizerId=event.organizerId,
+        organizer=event.organizer,
         isPublic=event.isPublic,
     )
 
@@ -147,7 +147,7 @@ def find_all_events() -> Any:
             title=event.title,
             description=event.description,
             date=str(event.date),
-            organizerId=event.organizerId,
+            organizer=event.organizer,
             isPublic=event.isPublic,
         )
         for event in events
@@ -170,7 +170,7 @@ def find_event(event_id: int) -> Any:
             title=event.title,
             description=event.description,
             date=str(event.date),
-            organizerId=event.organizerId,
+            organizer=event.organizer,
             isPublic=event.isPublic,
         )
         if event
@@ -183,7 +183,7 @@ def update_event(
     title: str,
     description: str,
     date: datetime.date,
-    organizerId: int,
+    organizer: str,
     isPublic: bool,
 ):
     """
@@ -193,7 +193,7 @@ def update_event(
     :param title: The title of the event.
     :param description: The description of the event.
     :param date: The date of the event.
-    :param organizerId: The id of the organizer.
+    :param organizer: The id of the organizer.
     :param isPublic: Whether the event is public or not.
 
     :returns: The updated event.
@@ -206,7 +206,7 @@ def update_event(
     setattr(event, "title", title)
     setattr(event, "description", description)
     setattr(event, "date", date)
-    setattr(event, "organizerId", organizerId)
+    setattr(event, "organizer", organizer)
     setattr(event, "isPublic", isPublic)
     try:
         session.commit()
