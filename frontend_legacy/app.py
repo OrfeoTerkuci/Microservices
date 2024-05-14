@@ -25,6 +25,16 @@ def succesful_request(r):
     return r.status_code == 200
 
 
+def convert_status(status):
+    if status == "Don't Participate":
+        return "NO"
+    if status == "Participate":
+        return "YES"
+    if status == "Maybe Participate":
+        return "MAYBE"
+    return "PENDING"
+
+
 @app.route("/")
 def home():
     global username
@@ -41,7 +51,7 @@ def home():
 
         response = requests.get("http://events-service:8000/api/events/public")
 
-        if response.status_code == 200:
+        if succesful_request(response):
             public_events = [
                 (event["title"], event["date"], event["organizer"])
                 for event in response.json()["events"]
@@ -202,7 +212,7 @@ def login():
         data={"username": req_username, "password": req_password},
     )
 
-    success = response.status_code == 200
+    success = succesful_request(response)
 
     save_to_session("success", success)
     if success:
@@ -233,7 +243,7 @@ def register():
         json={"username": req_username, "password": req_password},
     )
 
-    success = response.status_code == 200
+    success = succesful_request(response)
 
     save_to_session("success", success)
 
@@ -254,7 +264,33 @@ def invites():
     # retrieve a list with all events you are invited to and have not yet responded to
     # ==============================
 
-    my_invites = [(1, "Test event", "Tomorrow", "Benjamin", "Private")]  # TODO: process
+    my_invites = []
+    global username
+
+    response = requests.get(
+        f"http://invites-service:8000/api/invites?username={username}"
+    )
+    if succesful_request(response):
+
+        events = [
+            invite["eventId"]
+            for invite in response.json()["invites"]
+            if invite["status"] == "PENDING"
+        ]
+        for event in events:
+            response = requests.get(f"http://events-service:8000/api/events/{event}")
+            if succesful_request(response):
+                event = response.json()["event"]
+                my_invites.append(
+                    (
+                        event["id"],
+                        event["title"],
+                        event["date"],
+                        event["organizer"],
+                        "Public" if event["isPublic"] else "Private",
+                    )
+                )
+
     return render_template(
         "invites.html", username=username, password=password, invites=my_invites
     )
@@ -275,8 +311,16 @@ def process_invite():
     #
     # process an invite (accept, maybe, don't accept)
     # =======================
+    global username
+    status = convert_status(status)
 
-    pass  # TODO: send to microservice
+    response = requests.put(
+        "http://invites-service:8000/api/invites",
+        json={"eventId": int(eventId), "username": username, "status": status},
+    )
+
+    if not succesful_request(response):
+        return response.content, 500
 
     return redirect("/invites")
 
