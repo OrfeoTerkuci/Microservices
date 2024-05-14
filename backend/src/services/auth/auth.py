@@ -141,7 +141,7 @@ async def logout(request: Request) -> Response:
         )
     return Response(
         status_code=status.HTTP_200_OK,
-        content=json.dumps({"message": "User logged out"}),
+        content="User logged out",
     )
 
 
