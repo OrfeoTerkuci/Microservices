@@ -55,6 +55,38 @@ async def get_events():
             content=json.dumps({"error": str(e)}),
             media_type="application/json",
         )
+        
+@router.get("/public")
+async def get_public_events():
+    """
+    Get public events.
+    """
+    try:
+        return Response(
+            status_code=status.HTTP_200_OK,
+            content=json.dumps(
+                {
+                    "events": [
+                        {
+                            "id": event.id,
+                            "title": event.title,
+                            "description": event.description,
+                            "date": event.date,
+                            "organizer": event.organizer,
+                            "isPublic": event.isPublic,
+                        }
+                        for event in find_all_events() if event.isPublic
+                    ]
+                }
+            ),
+            media_type="application/json",
+        )
+    except Exception as e:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": str(e)}),
+            media_type="application/json",
+        )
 
 
 @router.get("/{event_id}")
