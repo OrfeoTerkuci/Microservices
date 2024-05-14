@@ -47,6 +47,7 @@ def get_invite(
     if not (username or eventId):
         invites = find_all_invites()
         return Response(
+            status_code=status.HTTP_200_OK,
             content=json.dumps(
                 {
                     "invites": [
@@ -72,6 +73,7 @@ def get_invite(
                 media_type="application/json",
             )
         return Response(
+            status_code=status.HTTP_200_OK,
             content=json.dumps(
                 {
                     f"invites": {
@@ -86,6 +88,7 @@ def get_invite(
     elif username:
         invites = find_invites_by_user(username)
         return Response(
+            status_code=status.HTTP_200_OK,
             content=json.dumps(
                 {
                     "invites": [
@@ -103,6 +106,7 @@ def get_invite(
     elif eventId:
         invites = find_invites_by_event(eventId)
         return Response(
+            status_code=status.HTTP_200_OK,
             content=json.dumps(
                 {
                     "invites": [
@@ -180,7 +184,7 @@ def update_invite_status(invite: InviteModel):
                     "event": {
                         "eventId": invite.eventId,
                         "username": invite.username,
-                        "status": invite.status,
+                        "status": invite.status.value,
                     }
                 }
             ),
