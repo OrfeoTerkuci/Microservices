@@ -167,7 +167,32 @@ def calendar():
                         "Public" if event["isPublic"] else "Private",
                     )
                 )
-        # TODO: get the public events from the participation service
+        response = requests.get(
+            f"http://rsvp-service:8000/api/rsvp?username={calendar_user}"
+        )
+        if succesful_request(response):
+            events = [
+                rsvp["eventId"]
+                for rsvp in response.json()["responses"]
+                if rsvp["status"] == "YES"
+            ]
+            for event in events:
+                response = requests.get(
+                    f"http://events-service:8000/api/events/{event}"
+                )
+                if not succesful_request(response):
+                    continue
+                event = response.json()["event"]
+                calendar.append(
+                    (
+                        event["id"],
+                        event["title"],
+                        event["date"],
+                        event["organizer"],
+                        "Going",
+                        "Public" if event["isPublic"] else "Private",
+                    )
+                )
 
     else:
         calendar = None
