@@ -132,6 +132,31 @@ services:
       - RSVP_DB_PASSWORD=${APP_DB_PASSWORD}
       - RSVP_DB_PORT=5432
 
+  calendars-service:
+    container_name: calendars-service
+    build: ./backend/src/services/calendars/
+    ports:
+      - "127.0.0.1:8004:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./backend/src/services/calendars:/calendars
+    networks:
+      - host
+      - calendars-db
+    depends_on:
+      calendars-db:
+        condition: service_healthy
+    environment:
+      - CALENDARS_DB_HOST=${CALENDARS_DB_HOST}
+      - CALENDARS_DB_NAME=${CALENDARS_DB_NAME}
+      - CALENDARS_DB_USER=${APP_DB_USER}
+      - CALENDARS_DB_PASSWORD=${APP_DB_PASSWORD}
+      - CALENDARS_DB_PORT=5432
+
   auth-db:
     container_name: microservices-auth-db
     hostname: db
