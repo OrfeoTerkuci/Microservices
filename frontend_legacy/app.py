@@ -26,12 +26,21 @@ def succesful_request(r):
 
 
 def convert_status(status):
+    # Mapping
     if status == "Don't Participate":
         return "NO"
     if status == "Participate":
         return "YES"
     if status == "Maybe Participate":
         return "MAYBE"
+    # Reverse mapping
+    if status == "NO":
+        return "Don't Participate"
+    if status == "YES":
+        return "Participate"
+    if status == "MAYBE":
+        return "Maybe Participate"
+    # Default
     return "PENDING"
 
 
@@ -129,9 +138,37 @@ def calendar():
     )
 
     if success:
-        calendar = [
-            (1, "Test event", "Tomorrow", "Benjamin", "Going", "Public")
-        ]  # TODO: call
+        calendar = []
+        # Get the private events that the user is participating in
+        response = requests.get(
+            f"http://invites-service:8000/api/invites?username={calendar_user}"
+        )
+
+        if succesful_request(response):
+            events = [
+                invite["eventId"]
+                for invite in response.json()["invites"]
+                if invite["status"] == "YES"
+            ]
+            for event in events:
+                response = requests.get(
+                    f"http://events-service:8000/api/events/{event}"
+                )
+                if not succesful_request(response):
+                    continue
+                event = response.json()["event"]
+                calendar.append(
+                    (
+                        event["id"],
+                        event["title"],
+                        event["date"],
+                        event["organizer"],
+                        "Going",
+                        "Public" if event["isPublic"] else "Private",
+                    )
+                )
+        # TODO: get the public events from the participation service
+
     else:
         calendar = None
 
@@ -177,17 +214,42 @@ def view_event(eventid):
     # Retrieve additional information for a certain event parameterized by an id. The webpage expects a (title, date, organizer, status, (invitee, participating)) tuples.
     # Try to keep in mind failure of the underlying microservice
     # =================================
+    global username
 
-    success = True  # TODO: this might change depending on whether you can see the event (public, or private but invited)
+    response = requests.get(f"http://events-service:8000/api/events/{eventid}")
+    if not succesful_request(response):
+        return "Event not found", 404
+
+    event = response.json()["event"]
+
+    if event["isPublic"]:
+        success = True
+    else:
+        response = requests.get(
+            f"http://invites-service:8000/api/invites?eventId={eventid}&username={username}"
+        )
+        success = succesful_request(response)
 
     if success:
+        # Get the participants
+        response = requests.get(
+            f"http://invites-service:8000/api/invites?eventId={eventid}"
+        )
+
+        if not succesful_request(response):
+            return "Event not found", 404
+        participants = [
+            [invite["username"], convert_status(invite["status"])]
+            for invite in response.json()["invites"]
+        ]
+
         event = [
-            "Test event",
-            "Tomorrow",
-            "Benjamin",
-            "Public",
-            [["Benjamin", "Participating"], ["Fabian", "Maybe Participating"]],
-        ]  # TODO: populate this with details from the actual event
+            event["title"],
+            event["date"],
+            event["organizer"],
+            "Public" if event["isPublic"] else "Private",
+            participants,
+        ]
     else:
         event = None  # No success, so don't fetch the data
 
