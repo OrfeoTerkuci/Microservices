@@ -1,7 +1,7 @@
 CREATE TABLE "shared_calendars" (
-    "sharing_user_id" INTEGER NOT NULL,
-    "receiving_user_id" INTEGER NOT NULL,
-    -- FOREIGN KEY ("sharing_user_id") REFERENCES "users" ("id") ON DELETE CASCADE,
-    -- FOREIGN KEY ("receiving_user_id") REFERENCES "users" ("id") ON DELETE CASCADE,
-    PRIMARY KEY ("sharing_user_id", "receiving_user_id")
+    "sharingUser" TEXT NOT NULL,
+    "receivingUser" TEXT NOT NULL,
+    -- FOREIGN KEY ("sharingUser") REFERENCES "users" ("username") ON DELETE CASCADE,
+    -- FOREIGN KEY ("receivingUser") REFERENCES "users" ("username") ON DELETE CASCADE,
+    PRIMARY KEY ("sharingUser", "receivingUser")
 );
