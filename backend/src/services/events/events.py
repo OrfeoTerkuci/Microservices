@@ -55,7 +55,8 @@ async def get_events():
             content=json.dumps({"error": str(e)}),
             media_type="application/json",
         )
-        
+
+
 @router.get("/public")
 async def get_public_events():
     """
@@ -75,7 +76,8 @@ async def get_public_events():
                             "organizer": event.organizer,
                             "isPublic": event.isPublic,
                         }
-                        for event in find_all_events() if event.isPublic
+                        for event in find_all_events()
+                        if event.isPublic
                     ]
                 }
             ),
@@ -134,7 +136,9 @@ async def add_event(event: EventModel):
     try:
         # Check if the organizer is valid
 
-        response = httpx.get(f"http://auth-service:8000/api/users?username={event.organizer}")
+        response = httpx.get(
+            f"http://auth-service:8000/api/users?username={event.organizer}"
+        )
         if response.status_code != 200:
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -215,7 +219,9 @@ async def modify_event(event_id: int, event: EventModel):
                 content=json.dumps({"error": "Event not found"}),
                 media_type="application/json",
             )
-        response = httpx.get(f"http://auth-service:8000/api/users?username={event.organizer}")
+        response = httpx.get(
+            f"http://auth-service:8000/api/users?username={event.organizer}"
+        )
         if response.status_code != 200:
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
