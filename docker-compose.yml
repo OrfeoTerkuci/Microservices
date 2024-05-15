@@ -107,6 +107,31 @@ services:
       - INVITES_DB_PASSWORD=${APP_DB_PASSWORD}
       - INVITES_DB_PORT=5432
 
+  rsvp-service:
+    container_name: rsvp-service
+    build: ./backend/src/services/rsvp/
+    ports:
+      - "127.0.0.1:8002:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./backend/src/services/rsvp:/rsvp
+    networks:
+      - host
+      - rsvp-db
+    depends_on:
+      invites-db:
+        condition: service_healthy
+    environment:
+      - RSVP_DB_HOST=${RSVP_DB_HOST}
+      - RSVP_DB_NAME=${RSVP_DB_NAME}
+      - RSVP_DB_USER=${APP_DB_USER}
+      - RSVP_DB_PASSWORD=${APP_DB_PASSWORD}
+      - RSVP_DB_PORT=5432
+
   auth-db:
     container_name: microservices-auth-db
     hostname: db
@@ -179,29 +204,29 @@ services:
       - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
       - POSTGRES_DB=${INVITES_DB_NAME}
 
-  participation-db:
-    container_name: microservices-participation-db
+  rsvp-db:
+    container_name: microservices-rsvp-db
     hostname: db
     image: postgres:16.2-bookworm
     ports:
       - "127.0.0.1:5435:5432"
     healthcheck:
-      test: "pg_isready -U '${APP_DB_USER}' -d '${PARTICIPATION_DB_NAME}' || exit 1"
+      test: "pg_isready -U '${APP_DB_USER}' -d '${RSVP_DB_NAME}' || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
     networks:
-      participation-db:
-        aliases: ["${PARTICIPATION_DB_HOST?}"]
+      rsvp-db:
+        aliases: ["${RSVP_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
-      - ./db/participation_db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - db-participation-data:/var/lib/postgresql/data
+      - ./db/rsvp_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-rsvp-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${APP_DB_USER}
       - POSTGRES_PASSWORD=${APP_DB_PASSWORD}
-      - POSTGRES_DB=${PARTICIPATION_DB_NAME}
+      - POSTGRES_DB=${RSVP_DB_NAME}
 
   calendars-db:
     container_name: microservices-calendars-db
@@ -235,7 +260,7 @@ networks:
     internal: true
   invites-db:
     internal: true
-  participation-db:
+  rsvp-db:
     internal: true
   calendars-db:
     internal: true
@@ -244,5 +269,5 @@ volumes:
   db-auth-data: {}
   db-events-data: {}
   db-invites-data: {}
-  db-participation-data: {}
+  db-rsvp-data: {}
   db-calendars-data: {}
