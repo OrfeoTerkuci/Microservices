@@ -133,9 +133,13 @@ def calendar():
     # Try to keep in mind failure of the underlying microservice
     # =================================
 
-    success = (
-        True  # TODO: this might change depending on if the calendar is shared with you
-    )
+    if calendar_user != username:
+        response = requests.get(
+            f"http://calendar-service:8000/api/share/by{calendar_user}/with/{username}"
+        )
+        success = succesful_request(response)
+    else:
+        success = True
 
     if success:
         calendar = []
@@ -148,7 +152,7 @@ def calendar():
             events = [
                 invite["eventId"]
                 for invite in response.json()["invites"]
-                if invite["status"] == "YES"
+                if invite["status"] in ["YES", "MAYBE"]
             ]
             for event in events:
                 response = requests.get(
@@ -174,7 +178,7 @@ def calendar():
             events = [
                 rsvp["eventId"]
                 for rsvp in response.json()["responses"]
-                if rsvp["status"] == "YES"
+                if rsvp["status"] in ["YES", "MAYBE"]
             ]
             for event in events:
                 response = requests.get(
@@ -223,8 +227,15 @@ def share():
     #
     # Share your calendar with a certain user. Return success = true / false depending on whether the sharing is succesful.
     # ========================================
+    global username
 
-    success = True  # TODO
+    response = requests.post(
+        "http://calendar-service:8000/api/share",
+        json={"sharingUser": username, "receivingUser": share_user},
+    )
+
+    success = response.status_code == 201
+
     return render_template(
         "share.html", username=username, password=password, success=success
     )
@@ -405,9 +416,6 @@ def process_invite():
         "http://invites-service:8000/api/invites",
         json={"eventId": int(eventId), "username": username, "status": status},
     )
-
-    if not succesful_request(response):
-        return response.content, 500
 
     return redirect("/invites")
 
