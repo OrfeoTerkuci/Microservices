@@ -1,6 +1,5 @@
 """
-    This module contains functions
-    that interact with the database for user authentication.
+Handles the database connection and operations for the authentication service.
 """
 
 import os
@@ -80,7 +79,7 @@ class Base(DeclarativeBase):
     """
 
 
-class UserModel(Base):
+class User(Base):
     """
     Model representing a user.
     """
@@ -95,7 +94,7 @@ class UserModel(Base):
 def create_user(
     username: str,
     password: str,
-) -> UserModel:
+) -> User:
     """
     Creates a user.
 
@@ -104,23 +103,23 @@ def create_user(
 
     :raises ValueError: If the user with the given username already exists.
 
-    :return: The created UserModel instance.
+    :return: The created User instance.
     """
     session = get_session()
-    if session.query(UserModel).filter(UserModel.username == username).first():
+    if session.query(User).filter(User.username == username).first():
         raise ValueError("User already exists")
 
-    new_user = UserModel(username=username, password=password)
+    new_user = User(username=username, password=password)
     try:
         session.add(new_user)
         session.commit()
-        return UserModel(username=username, password=password, id=new_user.id)
+        return User(username=username, password=password, id=new_user.id)
     except IntegrityError as exc_inner:
         session.rollback()
         raise ValueError("Error creating user") from exc_inner
 
 
-def find_user(username: str | None = None, user_id: int | None = None) -> UserModel:
+def find_user(username: str | None = None, user_id: int | None = None) -> User:
     """
     Finds a user based on its username and/or id.
 
@@ -129,16 +128,16 @@ def find_user(username: str | None = None, user_id: int | None = None) -> UserMo
 
     :raises ValueError: If the user with the given username
     and/or id is not found in the database.
-    :return: The found UserModel instance.
+    :return: The found User instance.
     """
     if not username and not user_id:
         raise ValueError("No username or id provided")
     session = get_session()
     try:
         user = (
-            (session.query(UserModel).filter(UserModel.username == username).first())
+            (session.query(User).filter(User.username == username).first())
             if username is not None
-            else session.query(UserModel).filter(UserModel.id == user_id).first()
+            else session.query(User).filter(User.id == user_id).first()
         )
     except OperationalError as se:
         raise ValueError("Error getting user:", se) from se
@@ -148,29 +147,29 @@ def find_user(username: str | None = None, user_id: int | None = None) -> UserMo
             f"User with username {username} and id {user_id} not found in the database"
         )
 
-    return UserModel(username=user.username, password=user.password, id=user.id)
+    return User(username=user.username, password=user.password, id=user.id)
 
 
-def get_all_users() -> list[UserModel]:
+def get_all_users() -> list[User]:
     """
     Gets all users from the database.
 
     :raises ValueError: If there is an error getting the users.
 
-    :return: List of all UserModel instances.
+    :return: List of all User instances.
     """
     session = get_session()
     try:
-        users = session.query(UserModel).all()
+        users = session.query(User).all()
         return [
-            UserModel(username=user.username, password=user.password, id=user.id)
+            User(username=user.username, password=user.password, id=user.id)
             for user in users
         ]
     except OperationalError as se:
         raise ValueError("Error getting users:", se) from se
 
 
-def update_user(user_id: int, **kwargs: Any) -> UserModel:
+def update_user(user_id: int, **kwargs: Any) -> User:
     r"""
     Updates a user's attributes.
 
@@ -179,11 +178,11 @@ def update_user(user_id: int, **kwargs: Any) -> UserModel:
 
     :raises ValueError: If the user with the given ID is not found in the database.
 
-    :return: The updated UserModel instance.
+    :return: The updated User instance.
     """
     session = get_session()
 
-    if not (user := session.query(UserModel).filter(UserModel.id == user_id).first()):
+    if not (user := session.query(User).filter(User.id == user_id).first()):
         raise ValueError(f"User with ID {user_id} not found in the database")
 
     for key, value in kwargs.items():
@@ -191,7 +190,7 @@ def update_user(user_id: int, **kwargs: Any) -> UserModel:
             setattr(user, key, value)
     try:
         session.commit()
-        return UserModel(username=user.username, password=user.password, id=user.id)
+        return User(username=user.username, password=user.password, id=user.id)
     except IntegrityError as exc_inner:
         session.rollback()
         raise ValueError("Error updating user") from exc_inner
@@ -205,7 +204,7 @@ def delete_user(user_id: int) -> None:
     """
     session = get_session()
 
-    if not (user := session.query(UserModel).filter(UserModel.id == user_id).first()):
+    if not (user := session.query(User).filter(User.id == user_id).first()):
         raise ValueError(f"User with ID {user_id} not found in the database")
     try:
         session.delete(user)
