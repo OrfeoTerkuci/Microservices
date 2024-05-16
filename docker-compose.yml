@@ -14,9 +14,6 @@ services:
         - action: sync
           path: ./frontend_legacy
           target: /app
-  # depends_on:
-  #   db:
-  #     condition: service_healthy
 
   # frontend:
   #   container_name: frontend
@@ -267,7 +264,7 @@ services:
     restart: unless-stopped
     networks:
       calendars-db:
-        aliases: ["${CALENDAR_DB_HOST?}"]
+        aliases: ["${CALENDARS_DB_HOST?}"]
     volumes:
       - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./db/calendars_db/init.sql:/docker-entrypoint-initdb.d/init.sql
