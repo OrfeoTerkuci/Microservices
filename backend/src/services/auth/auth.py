@@ -3,10 +3,9 @@ from typing import Optional
 
 import bcrypt
 
-from fastapi import APIRouter, Depends, Response, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Response, status
 from pydantic import BaseModel
-from wrapper import create_user, get_all_users, User
+from wrapper import create_user, find_user, User
 
 router = APIRouter()
 
@@ -49,18 +48,15 @@ def authenticate_user(username: str, password: str) -> Optional[User]:
     :param password: Password
     :return: UserModel if user is found, None otherwise
     """
-    users = get_all_users()
-
-    for user in users:
-        if user.username == username and verify_password(password, str(user.password)):  # type: ignore
-            return user
+    if (user := find_user(username=username)) and verify_password(
+        password, str(user.password)
+    ):
+        return user
     return None
 
 
 @router.post("/login")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-) -> Response:
+def login(user: UserModel) -> Response:
     """
     Login for access token.
 
@@ -69,7 +65,7 @@ async def login_for_access_token(
     :raises HTTPException: Incorrect username or password
     """
 
-    if not (user := authenticate_user(form_data.username, form_data.password)):
+    if not authenticate_user(user.username, user.password):
         return Response(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content="Incorrect username or password",
@@ -81,7 +77,7 @@ async def login_for_access_token(
 
 
 @router.post("/register")
-async def register(user: UserModel) -> Response:
+def register(user: UserModel) -> Response:
     """
     Register endpoint for users to create an account.
 
@@ -89,6 +85,11 @@ async def register(user: UserModel) -> Response:
     :raises HTTPException: Username already registered
     :return: Username and cookie
     """
+    if not user.username or not user.password:
+        return Response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content="Username and password must be provided",
+        )
     try:
         create_user(user.username, get_password_hash(user.password))
     except ValueError:
