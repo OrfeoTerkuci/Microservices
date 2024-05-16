@@ -29,6 +29,12 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(calendars.router, prefix="/calendars", tags=["calendars"])
