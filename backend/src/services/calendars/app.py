@@ -30,4 +30,4 @@ def health():
     return {"status": "ok"}
 
 
-app.include_router(calendars.router, prefix="/share", tags=["calendar share"])
+app.include_router(calendars.router, prefix="/shares", tags=["calendar shares"])

@@ -1,6 +1,5 @@
 import json
 
-import httpx
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel, Field
 from wrapper import (
@@ -22,11 +21,6 @@ class CalendarShareModel(BaseModel):
     receivingUser: str = Field(
         ..., min_length=1, description="The user receiving the calendar"
     )
-
-
-def check_user_exists(username: str):
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    return response.status_code == 200
 
 
 @router.get("")
@@ -137,7 +131,7 @@ def get_specific_shared_calendar(sharingUser: str, receivingUser: str):
 
 
 @router.post("")
-def share_calendar_route(calendar: CalendarShareModel):
+def add_shared_calendar(calendar: CalendarShareModel):
     """
     Share a calendar.
 
@@ -146,20 +140,6 @@ def share_calendar_route(calendar: CalendarShareModel):
     :returns: The shared calendar.
     """
     try:
-        # Check that both users exist
-
-        if not check_user_exists(calendar.sharingUser):
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Sharing user not found"}),
-                media_type="application/json",
-            )
-        if not check_user_exists(calendar.receivingUser):
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Receiving user not found"}),
-                media_type="application/json",
-            )
         share_calendar(
             sharingUser=calendar.sharingUser, receivingUser=calendar.receivingUser
         )
@@ -183,17 +163,15 @@ def share_calendar_route(calendar: CalendarShareModel):
     )
 
 
-@router.delete("")
-def delete_shared_calendar_route(calendar: CalendarShareModel):
+@router.delete("/{sharingUser}/{receivingUser}")
+def remove_shared_calendar(sharingUser: str, receivingUser: str):
     """
     Delete a shared calendar.
 
     :param calendar: The calendar to delete.
     """
     try:
-        delete_shared_calendar(
-            sharingUser=calendar.sharingUser, receivingUser=calendar.receivingUser
-        )
+        delete_shared_calendar(sharingUser, receivingUser)
     except Exception as exc:
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

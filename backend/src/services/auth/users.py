@@ -17,7 +17,7 @@ class UserModel(BaseModel):
 
 
 @router.get("")
-def get_user(
+async def get_user(
     user_id: int = Query(default=None),
     username: str = Query(default=None),
 ) -> Response:

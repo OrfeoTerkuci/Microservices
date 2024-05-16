@@ -1,8 +1,5 @@
-import datetime
 import json
-import logging
 
-import httpx
 from fastapi import APIRouter, Query, Response, status
 from pydantic import BaseModel, Field
 from wrapper import (
@@ -23,16 +20,6 @@ class RsvpResponseModel(BaseModel):
     eventId: int = Field(..., description="Event's ID")
     username: str = Field(..., min_length=1, description="User's username")
     status: RSVP_STATUS = Field(..., description="Response status")
-
-
-def check_user_exists(username: str):
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    return response.status_code == 200
-
-
-def check_event_exists(eventId: int):
-    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
-    return response.status_code == 200 and response.json()["event"]["isPublic"]
 
 
 @router.get("")
@@ -145,20 +132,6 @@ def create_rsvp(response: RsvpResponseModel):
     Create a new response
     """
     try:
-        # Check if the user and event exist and are public
-
-        if not check_user_exists(response.username):
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "User not found"}),
-                media_type="application/json",
-            )
-        if not check_event_exists(response.eventId):
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Public event not found"}),
-                media_type="application/json",
-            )
         create_response(response.eventId, response.username, response.status)
     except Exception as exc:
         return Response(
@@ -208,15 +181,14 @@ def update_rsvp(response: RsvpResponseModel):
     )
 
 
-@router.delete("")
-def delete_rsvp(response: RsvpResponseModel):
+@router.delete("/{eventId}/{username}")
+def delete_rsvp(eventId: int, username: str):
     """
     Delete a response
     """
-    # TODO: Maybe change thee endpoint to /rsvp/{eventId}/{username}
 
     try:
-        delete_response(response.eventId, response.username)
+        delete_response(eventId, username)
     except Exception as exc:
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

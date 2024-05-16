@@ -1,10 +1,7 @@
-import datetime
 import json
-import logging
 
-import httpx
 from fastapi import APIRouter, Query, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from wrapper import (
     create_invite,
@@ -26,14 +23,9 @@ class InviteModel(BaseModel):
     status: INVITE_STATUS
 
 
-def check_user_exists(username: str):
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    return response.status_code == 200
-
-
-def check_event_exists(eventId: int):
-    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
-    return response.status_code == 200
+class DeleteInviteModel(BaseModel):
+    eventId: int
+    username: str
 
 
 @router.get("")
@@ -97,20 +89,6 @@ def add_invite(invite: InviteModel):
     Create invite
     """
     try:
-        # check if the user and event exist
-
-        if not check_user_exists(invite.username):
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "User not found"}),
-                media_type="application/json",
-            )
-        if not check_event_exists(invite.eventId):
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Event not found"}),
-                media_type="application/json",
-            )
         create_invite(invite.eventId, invite.username, invite.status)
         return Response(
             status_code=status.HTTP_201_CREATED,
@@ -161,13 +139,13 @@ def update_invite_status(invite: InviteModel):
         )
 
 
-@router.delete("")
-def remove_invite(invite: InviteModel):
+@router.delete("/{eventId}/{username}")
+def remove_invite(eventId: int, username: str):
     """
     Remove invite
     """
     try:
-        delete_invite(invite.eventId, invite.username)
+        delete_invite(eventId, username)
         return Response(
             status_code=status.HTTP_200_OK,
             content=json.dumps({"message": "Invite deleted"}),

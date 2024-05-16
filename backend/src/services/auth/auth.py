@@ -56,7 +56,7 @@ def authenticate_user(username: str, password: str) -> Optional[User]:
 
 
 @router.post("/login")
-def login(user: UserModel) -> Response:
+async def login(user: UserModel) -> Response:
     """
     Login for access token.
 
@@ -77,7 +77,7 @@ def login(user: UserModel) -> Response:
 
 
 @router.post("/register")
-def register(user: UserModel) -> Response:
+async def register(user: UserModel) -> Response:
     """
     Register endpoint for users to create an account.
 

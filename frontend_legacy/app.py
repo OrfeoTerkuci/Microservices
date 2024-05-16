@@ -58,7 +58,7 @@ def home():
         # Try to keep in mind failure of the underlying microservice
         # =================================
 
-        response = requests.get("http://events-service:8000/api/events/public")
+        response = requests.get("http://backend:8000/api/events/public")
 
         if succesful_request(response):
             public_events = [
@@ -92,7 +92,7 @@ def create_event():
 
     # Create the event
     response = requests.post(
-        "http://events-service:8000/api/events/",
+        "http://backend:8000/api/events/",
         json={
             "title": title,
             "description": description,
@@ -109,7 +109,7 @@ def create_event():
             if not invitee:
                 continue
             requests.post(
-                "http://invites-service:8000/api/invites/",
+                "http://backend:8000/api/invites/",
                 json={
                     "eventId": event_id,
                     "username": invitee,
@@ -135,7 +135,7 @@ def calendar():
 
     if calendar_user != username:
         response = requests.get(
-            f"http://calendar-service:8000/api/share/by{calendar_user}/with/{username}"
+            f"http://backend:8000/api/shares/by/{calendar_user}/with/{username}"
         )
         success = succesful_request(response)
     else:
@@ -145,7 +145,7 @@ def calendar():
         calendar = []
         # Get the private events that the user is participating in
         response = requests.get(
-            f"http://invites-service:8000/api/invites?username={calendar_user}"
+            f"http://backend:8000/api/invites?username={calendar_user}"
         )
 
         if succesful_request(response):
@@ -156,7 +156,7 @@ def calendar():
             ]
             for event in events:
                 response = requests.get(
-                    f"http://events-service:8000/api/events/{event}"
+                    f"http://backend:8000/api/events/{event}"
                 )
                 if not succesful_request(response):
                     continue
@@ -172,7 +172,7 @@ def calendar():
                     )
                 )
         response = requests.get(
-            f"http://rsvp-service:8000/api/rsvp?username={calendar_user}"
+            f"http://backend:8000/api/rsvp?username={calendar_user}"
         )
         if succesful_request(response):
             events = [
@@ -182,7 +182,7 @@ def calendar():
             ]
             for event in events:
                 response = requests.get(
-                    f"http://events-service:8000/api/events/{event}"
+                    f"http://backend:8000/api/events/{event}"
                 )
                 if not succesful_request(response):
                     continue
@@ -230,7 +230,7 @@ def share():
     global username
 
     response = requests.post(
-        "http://calendar-service:8000/api/share",
+        "http://backend:8000/api/shares",
         json={"sharingUser": username, "receivingUser": share_user},
     )
 
@@ -252,7 +252,7 @@ def view_event(eventid):
     # =================================
     global username
 
-    response = requests.get(f"http://events-service:8000/api/events/{eventid}")
+    response = requests.get(f"http://backend:8000/api/events/{eventid}")
     if not succesful_request(response):
         return "Event not found", 404
 
@@ -262,14 +262,14 @@ def view_event(eventid):
         success = True
     else:
         response = requests.get(
-            f"http://invites-service:8000/api/invites?eventId={eventid}&username={username}"
+            f"http://backend:8000/api/invites?eventId={eventid}&username={username}"
         )
         success = succesful_request(response)
 
     if success:
         # Get the participants
         response = requests.get(
-            f"http://invites-service:8000/api/invites?eventId={eventid}"
+            f"http://backend:8000/api/invites?eventId={eventid}"
         )
 
         if not succesful_request(response):
@@ -306,7 +306,7 @@ def login():
     # Also pay attention to the status code returned by the microservice.
     # ================================
     response = requests.post(
-        "http://auth-service:8000/api/auth/login",
+        "http://backend:8000/api/auth/login",
         data={"username": req_username, "password": req_password},
     )
 
@@ -337,7 +337,7 @@ def register():
     # ================================
 
     response = requests.post(
-        "http://auth-service:8000/api/auth/register",
+        "http://backend:8000/api/auth/register",
         json={"username": req_username, "password": req_password},
     )
 
@@ -366,7 +366,7 @@ def invites():
     global username
 
     response = requests.get(
-        f"http://invites-service:8000/api/invites?username={username}"
+        f"http://backend:8000/api/invites?username={username}"
     )
     if succesful_request(response):
 
@@ -376,7 +376,7 @@ def invites():
             if invite["status"] == "PENDING"
         ]
         for event in events:
-            response = requests.get(f"http://events-service:8000/api/events/{event}")
+            response = requests.get(f"http://backend:8000/api/events/{event}")
             if succesful_request(response):
                 event = response.json()["event"]
                 my_invites.append(
@@ -413,7 +413,7 @@ def process_invite():
     status = convert_status(status)
 
     response = requests.put(
-        "http://invites-service:8000/api/invites",
+        "http://backend:8000/api/invites",
         json={"eventId": int(eventId), "username": username, "status": status},
     )
 

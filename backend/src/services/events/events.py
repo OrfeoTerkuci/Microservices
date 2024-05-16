@@ -1,8 +1,6 @@
 import datetime
 import json
-import logging
 
-import httpx
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel, Field
 from wrapper import (
@@ -24,7 +22,7 @@ class EventModel(BaseModel):
     isPublic: bool
 
 
-@router.get("/")
+@router.get("")
 async def get_events():
     """
     Get events.
@@ -128,23 +126,12 @@ async def get_event(event_id: int):
         )
 
 
-@router.post("/")
+@router.post("")
 async def add_event(event: EventModel):
     """
     Create an event.
     """
     try:
-        # Check if the organizer is valid
-
-        response = httpx.get(
-            f"http://auth-service:8000/api/users?username={event.organizer}"
-        )
-        if response.status_code != 200:
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Organizer not found"}),
-                media_type="application/json",
-            )
         created_event = create_event(
             title=event.title,
             description=event.description,
@@ -152,9 +139,6 @@ async def add_event(event: EventModel):
             organizer=event.organizer,
             isPublic=event.isPublic,
         )
-
-        logging.debug(f"Event created: {created_event}")
-
         return Response(
             status_code=status.HTTP_201_CREATED,
             content=json.dumps(
@@ -217,15 +201,6 @@ async def modify_event(event_id: int, event: EventModel):
             return Response(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content=json.dumps({"error": "Event not found"}),
-                media_type="application/json",
-            )
-        response = httpx.get(
-            f"http://auth-service:8000/api/users?username={event.organizer}"
-        )
-        if response.status_code != 200:
-            return Response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content=json.dumps({"error": "Organizer not found"}),
                 media_type="application/json",
             )
         update_event(

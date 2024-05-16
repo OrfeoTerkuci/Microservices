@@ -15,7 +15,7 @@ class UserModel(BaseModel):
 
 
 @router.post("/login")
-def login(user: UserModel) -> Response:
+async def login(user: UserModel) -> Response:
     """
     Authenticate user.
     """
@@ -31,7 +31,7 @@ def login(user: UserModel) -> Response:
 
 
 @router.post("/register")
-def register(user: UserModel) -> Response:
+async def register(user: UserModel) -> Response:
     """
     Register user.
     """
