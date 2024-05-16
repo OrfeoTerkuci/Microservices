@@ -24,4 +24,10 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 app.include_router(calendars.router, prefix="/share", tags=["calendar share"])

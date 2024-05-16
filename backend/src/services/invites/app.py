@@ -2,9 +2,9 @@
 This file contains the event routes for the FastAPI application.
 """
 
+import invites
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import invites
 
 app = FastAPI(
     title="Invites Service API",
@@ -23,5 +23,11 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 app.include_router(invites.router, prefix="/invites", tags=["invites"])
