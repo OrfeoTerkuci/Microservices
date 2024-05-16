@@ -22,7 +22,7 @@ def load_from_session(key):
 
 
 def succesful_request(r):
-    return r.status_code == 200
+    return r.status_code in [200, 201]
 
 
 def convert_status(status):
@@ -57,7 +57,7 @@ def home():
         # Retrieve the list of all public events. The webpage expects a list of (title, date, organizer) tuples.
         # Try to keep in mind failure of the underlying microservice
         # =================================
-
+        public_events = []
         response = requests.get("http://backend:8000/api/events/public")
 
         if succesful_request(response):
@@ -65,8 +65,6 @@ def home():
                 (event["title"], event["date"], event["organizer"])
                 for event in response.json()["events"]
             ]
-        else:
-            public_events = []
 
         return render_template(
             "home.html", username=username, password=password, events=public_events
@@ -102,8 +100,8 @@ def create_event():
         },
     )
 
-    # Send out the invites
-    if response.status_code == 201:
+    if succesful_request(response):
+        # Send out the invites
         event_id = response.json()["event"]["id"]
         for invitee in invites.split(";"):
             if not invitee:
@@ -116,6 +114,15 @@ def create_event():
                     "status": "PENDING",
                 },
             )
+        # Add yourself as participating (you are the organizer)
+        requests.post(
+            "http://backend:8000/api/invites/",
+            json={
+                "eventId": event_id,
+                "username": username,
+                "status": "YES",
+            },
+        )
 
     return redirect("/")
 
@@ -155,9 +162,7 @@ def calendar():
                 if invite["status"] in ["YES", "MAYBE"]
             ]
             for event in events:
-                response = requests.get(
-                    f"http://backend:8000/api/events/{event}"
-                )
+                response = requests.get(f"http://backend:8000/api/events/{event}")
                 if not succesful_request(response):
                     continue
                 event = response.json()["event"]
@@ -176,14 +181,12 @@ def calendar():
         )
         if succesful_request(response):
             events = [
-                rsvp["eventId"]
+                (rsvp["eventId"], rsvp["status"])
                 for rsvp in response.json()["responses"]
                 if rsvp["status"] in ["YES", "MAYBE"]
             ]
-            for event in events:
-                response = requests.get(
-                    f"http://backend:8000/api/events/{event}"
-                )
+            for event, status in events:
+                response = requests.get(f"http://backend:8000/api/events/{event}")
                 if not succesful_request(response):
                     continue
                 event = response.json()["event"]
@@ -193,13 +196,14 @@ def calendar():
                         event["title"],
                         event["date"],
                         event["organizer"],
-                        "Going",
+                        "Going" if status == "YES" else "Maybe going",
                         "Public" if event["isPublic"] else "Private",
                     )
                 )
-
     else:
         calendar = None
+
+    save_to_session("success", success)
 
     return render_template(
         "calendar.html",
@@ -234,7 +238,9 @@ def share():
         json={"sharingUser": username, "receivingUser": share_user},
     )
 
-    success = response.status_code == 201
+    success = succesful_request(response)
+
+    save_to_session("success", success)
 
     return render_template(
         "share.html", username=username, password=password, success=success
@@ -268,9 +274,7 @@ def view_event(eventid):
 
     if success:
         # Get the participants
-        response = requests.get(
-            f"http://backend:8000/api/invites?eventId={eventid}"
-        )
+        response = requests.get(f"http://backend:8000/api/invites?eventId={eventid}")
 
         if not succesful_request(response):
             return "Event not found", 404
@@ -288,6 +292,8 @@ def view_event(eventid):
         ]
     else:
         event = None  # No success, so don't fetch the data
+
+    save_to_session("success", success)
 
     return render_template(
         "event.html", username=username, password=password, event=event, success=success
@@ -307,12 +313,13 @@ def login():
     # ================================
     response = requests.post(
         "http://backend:8000/api/auth/login",
-        data={"username": req_username, "password": req_password},
+        json={"username": req_username, "password": req_password},
     )
 
     success = succesful_request(response)
 
     save_to_session("success", success)
+
     if success:
         global username, password
 
@@ -365,11 +372,9 @@ def invites():
     my_invites = []
     global username
 
-    response = requests.get(
-        f"http://backend:8000/api/invites?username={username}"
-    )
-    if succesful_request(response):
+    response = requests.get(f"http://backend:8000/api/invites?username={username}")
 
+    if succesful_request(response):
         events = [
             invite["eventId"]
             for invite in response.json()["invites"]
@@ -412,7 +417,7 @@ def process_invite():
     global username
     status = convert_status(status)
 
-    response = requests.put(
+    requests.put(
         "http://backend:8000/api/invites",
         json={"eventId": int(eventId), "username": username, "status": status},
     )
