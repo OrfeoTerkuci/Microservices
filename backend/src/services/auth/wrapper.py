@@ -7,17 +7,15 @@ import os
 from typing import Any
 
 from sqlalchemy import (
-    Boolean,
     Column,
     create_engine,
-    ForeignKey,
     SmallInteger,
     String,
     URL,
 )
 
 from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy.orm import DeclarativeBase, relationship, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 
 def get_env(var: str) -> str:
@@ -92,22 +90,6 @@ class UserModel(Base):
     id = Column(SmallInteger, primary_key=True, autoincrement=True, nullable=False)
     username = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
-    tokens = relationship("TokenModel", back_populates="users", cascade="all, delete")
-
-
-class TokenModel(Base):
-    """
-    Model representing a token.
-    """
-
-    __tablename__ = "tokens"
-
-    id = Column(SmallInteger, primary_key=True, autoincrement=True, nullable=False)
-    token = Column(String, primary_key=True, nullable=False)
-    user_id = Column(SmallInteger, ForeignKey("users.id"), nullable=False)
-    valid = Column(Boolean, nullable=False, default=True)
-
-    users = relationship("UserModel", back_populates="tokens")
 
 
 def create_user(
@@ -138,9 +120,7 @@ def create_user(
         raise ValueError("Error creating user") from exc_inner
 
 
-def find_user(
-    username: str | None = None, user_id: int | None = None
-) -> UserModel:
+def find_user(username: str | None = None, user_id: int | None = None) -> UserModel:
     """
     Finds a user based on its username and/or id.
 
@@ -233,128 +213,3 @@ def delete_user(user_id: int) -> None:
     except IntegrityError as exc_inner:
         session.rollback()
         raise ValueError("Error deleting user") from exc_inner
-
-
-def add_token(token: str, user_id: int) -> None:
-    """
-    Adds a token to the database.
-
-    :param token: Token.
-    :param user_id: ID of the user.
-
-    :raises ValueError: If the token already exists in the database.
-    """
-    session = get_session()
-
-    if session.query(TokenModel).filter(TokenModel.token == token).first():
-        raise ValueError(f"Token {token} already exists in the database")
-    try:
-        new_token = TokenModel(token=token, user_id=user_id)
-        session.add(new_token)
-        session.commit()
-    except IntegrityError as exc_inner:
-        session.rollback()
-        raise ValueError(f"Token {token} already exists in the database") from exc_inner
-
-
-def blacklist_token(token_value: str) -> None:
-    """
-    Blacklists a token in the database.
-
-    :param token_value: Token.
-
-    :raises ValueError: If the token does not exist in the database.
-    """
-    session = get_session()
-
-    # check if token exists
-    try:
-        if not (
-            token := session.query(TokenModel)
-            .filter(TokenModel.token == token_value)
-            .first()
-        ):
-            raise ValueError(f"Token {token_value} not found in the database")
-
-        setattr(token, "valid", True)
-        session.commit()
-    except ValueError as se:
-        session.rollback()
-        raise ValueError(f"Token {token_value} not found in the database") from se
-    except OperationalError as se:
-        session.rollback()
-        raise ValueError("Error blacklisting token:", se) from se
-
-
-def get_user_tokens(u_id: int) -> list[TokenModel]:
-    """
-    Gets all tokens from the database for a specific user.
-
-    :param u_id: User ID.
-
-    :raises ValueError: If there is an error getting the tokens.
-
-    :return: List of all TokenModel instances.
-    """
-    session = get_session()
-
-    try:
-        tokens = session.query(TokenModel).filter(TokenModel.user_id == u_id).all()
-        return [
-            TokenModel(
-                id=token.id, token=token.token, user_id=token.user_id, valid=token.valid
-            )
-            for token in tokens
-        ]
-    except OperationalError as se:
-        raise ValueError("Error getting tokens:", se) from se
-
-
-def get_all_tokens() -> list[TokenModel]:
-    """
-    Gets all tokens from the database.
-
-    :raises ValueError: If there is an error getting the tokens.
-
-    :return: List of all TokenModel instances.
-    """
-    session = get_session()
-
-    try:
-        tokens = session.query(TokenModel).all()
-        return [
-            TokenModel(
-                id=token.id, token=token.token, user_id=token.user_id, valid=token.valid
-            )
-            for token in tokens
-        ]
-    except OperationalError as se:
-        raise ValueError("Error getting tokens:", se) from se
-
-
-def get_token(token: str) -> TokenModel | None:
-    """
-    Gets a token from the database.
-
-    :param token: Token.
-
-    :raises ValueError: If there is an error while getting the token.
-
-    :return: TokenModel instance.
-    """
-    session = get_session()
-
-    try:
-        ret_token = session.query(TokenModel).filter(TokenModel.token == token).first()
-        return (
-            TokenModel(
-                id=ret_token.id,
-                token=ret_token.token,
-                user_id=ret_token.user_id,
-                valid=ret_token.valid,
-            )
-            if ret_token
-            else None
-        )
-    except OperationalError as se:
-        raise ValueError("Error getting token:", se) from se
