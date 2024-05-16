@@ -44,27 +44,8 @@ def get_invite(
     """
     Get invite by user and event ID
     """
-    if not (username or eventId):
-        invites = find_all_invites()
-        return Response(
-            status_code=status.HTTP_200_OK,
-            content=json.dumps(
-                {
-                    "invites": [
-                        {
-                            "eventId": invite.eventId,
-                            "username": invite.username,
-                            "status": invite.status,
-                        }
-                        for invite in invites
-                    ]
-                }
-            ),
-            media_type="application/json",
-        )
     if username and eventId:
         # Search for a specific invite
-
         invite = find_invite(eventId, username)
         if not invite:
             return Response(
@@ -85,45 +66,27 @@ def get_invite(
             ),
             media_type="application/json",
         )
-    elif username:
+
+    if username:
         invites = find_invites_by_user(username)
-        return Response(
-            status_code=status.HTTP_200_OK,
-            content=json.dumps(
-                {
-                    "invites": [
-                        {
-                            "eventId": invite.eventId,
-                            "username": invite.username,
-                            "status": invite.status,
-                        }
-                        for invite in invites
-                    ]
-                }
-            ),
-            media_type="application/json",
-        )
     elif eventId:
         invites = find_invites_by_event(eventId)
-        return Response(
-            status_code=status.HTTP_200_OK,
-            content=json.dumps(
-                {
-                    "invites": [
-                        {
-                            "eventId": invite.eventId,
-                            "username": invite.username,
-                            "status": invite.status,
-                        }
-                        for invite in invites
-                    ]
-                }
-            ),
-            media_type="application/json",
-        )
+    else:
+        invites = find_all_invites()
     return Response(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content=json.dumps({"error": "Invalid request"}),
+        status_code=status.HTTP_200_OK,
+        content=json.dumps(
+            {
+                "invites": [
+                    {
+                        "eventId": invite.eventId,
+                        "username": invite.username,
+                        "status": invite.status,
+                    }
+                    for invite in invites
+                ]
+            }
+        ),
         media_type="application/json",
     )
 
