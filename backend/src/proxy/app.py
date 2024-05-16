@@ -37,7 +37,7 @@ def health():
 
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
-app.include_router(calendars.router, prefix="/calendars", tags=["calendars"])
+app.include_router(calendars.router, prefix="/shares", tags=["calendar shares"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(invites.router, prefix="/invites", tags=["invites"])
 app.include_router(rsvp.router, prefix="/rsvp", tags=["rsvp"])
