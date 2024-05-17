@@ -76,7 +76,7 @@ def get_responses(
         params["eventId"] = eventId
     response = httpx.get("http://rsvp-service:8000/api/rsvp", params=params)
     return Response(
-        status_code=status.HTTP_200_OK,
+        status_code=response.status_code,
         content=response.content,
         media_type="application/json",
     )

@@ -90,7 +90,7 @@ def create_event():
 
     # Create the event
     response = requests.post(
-        "http://backend:8000/api/events/",
+        "http://backend:8000/api/events",
         json={
             "title": title,
             "description": description,
@@ -107,7 +107,7 @@ def create_event():
             if not invitee:
                 continue
             requests.post(
-                "http://backend:8000/api/invites/",
+                "http://backend:8000/api/invites",
                 json={
                     "eventId": event_id,
                     "username": invitee,
@@ -116,7 +116,7 @@ def create_event():
             )
         # Add yourself as participating (you are the organizer)
         requests.post(
-            "http://backend:8000/api/invites/",
+            "http://backend:8000/api/invites",
             json={
                 "eventId": event_id,
                 "username": username,
@@ -288,7 +288,18 @@ def view_event(eventid):
         participants = [
             [invite["username"], convert_status(invite["status"])]
             for invite in response.json()["invites"]
+            if invite["status"] in ["YES", "MAYBE"]
         ]
+
+        # If the event is public, get the RSVPs
+        if event["isPublic"]:
+            response = requests.get(f"http://backend:8000/api/rsvp?eventId={eventid}")
+            if succesful_request(response):
+                participants += [
+                    [rsvp["username"], convert_status(rsvp["status"])]
+                    for rsvp in response.json()["responses"]
+                    if rsvp["status"] in ["YES", "MAYBE"]
+                ]
 
         event = [
             event["title"],
@@ -450,10 +461,39 @@ def rsvp():
     global username
     status = convert_status(status)
 
-    requests.put(
-        "http://backend:8000/api/rsvp",
-        json={"eventId": int(eventId), "username": username, "status": status},
+    # Check if the user received a private invite before rsvp to public event
+    response = requests.get(
+        f"http://backend:8000/api/invites?eventId={eventId}&username={username}"
     )
+    if succesful_request(response):
+        # If the user received an invite, update the invite
+        requests.put(
+            "http://backend:8000/api/invites",
+            json={"eventId": int(eventId), "username": username, "status": status},
+        )
+        save_to_session("success", True)
+        return redirect("/")
+
+    # No invite => User is RSVPing to a public event
+    # Check if the rsvp exists
+    response = requests.get(
+        f"http://backend:8000/api/rsvp?eventId={eventId}&username={username}"
+    )
+    if not succesful_request(response):
+        # If it doesn't exist, create it
+        requests.post(
+            "http://backend:8000/api/rsvp",
+            json={"eventId": int(eventId), "username": username, "status": status},
+        )
+    else:
+        # If it does exist, update it
+        requests.put(
+            "http://backend:8000/api/rsvp",
+            json={"eventId": int(eventId), "username": username, "status": status},
+        )
+
+    save_to_session("success", True)
+
     return redirect("/")
 
 
