@@ -58,7 +58,12 @@ def home():
         # Try to keep in mind failure of the underlying microservice
         # =================================
         public_events = []
-        response = requests.get("http://backend:8000/api/events/public")
+        try:
+            response = requests.get("http://backend:8000/api/events/public")
+        except requests.exceptions.ConnectionError:
+            return render_template(
+                "home.html", username=username, password=password, events=public_events
+            )
 
         if succesful_request(response):
             public_events = [
@@ -89,16 +94,19 @@ def create_event():
     global username
 
     # Create the event
-    response = requests.post(
-        "http://backend:8000/api/events",
-        json={
-            "title": title,
-            "description": description,
-            "date": date,
-            "organizer": username,
-            "isPublic": publicprivate == "public",
-        },
-    )
+    try:
+        response = requests.post(
+            "http://backend:8000/api/events",
+            json={
+                "title": title,
+                "description": description,
+                "date": date,
+                "organizer": username,
+                "isPublic": publicprivate == "public",
+            },
+        )
+    except requests.exceptions.ConnectionError:
+        return redirect("/")
 
     if succesful_request(response):
         # Send out the invites
@@ -106,23 +114,29 @@ def create_event():
         for invitee in invites.split(";"):
             if not invitee:
                 continue
+            try:
+                requests.post(
+                    "http://backend:8000/api/invites",
+                    json={
+                        "eventId": event_id,
+                        "username": invitee,
+                        "status": "PENDING",
+                    },
+                )
+            except requests.exceptions.ConnectionError:
+                break  # If server is down, don't continue sending invites
+        try:
+            # Add yourself as participating (you are the organizer)
             requests.post(
                 "http://backend:8000/api/invites",
                 json={
                     "eventId": event_id,
-                    "username": invitee,
-                    "status": "PENDING",
+                    "username": username,
+                    "status": "YES",
                 },
             )
-        # Add yourself as participating (you are the organizer)
-        requests.post(
-            "http://backend:8000/api/invites",
-            json={
-                "eventId": event_id,
-                "username": username,
-                "status": "YES",
-            },
-        )
+        except requests.exceptions.ConnectionError:
+            pass
 
     return redirect("/")
 
@@ -141,65 +155,81 @@ def calendar():
     # =================================
 
     if calendar_user != username:
-        response = requests.get(
-            f"http://backend:8000/api/shares/by/{calendar_user}/with/{username}"
-        )
-        success = succesful_request(response)
+        try:
+            response = requests.get(
+                f"http://backend:8000/api/shares/by/{calendar_user}/with/{username}"
+            )
+            success = succesful_request(response)
+        except requests.exceptions.ConnectionError:
+            success = False
     else:
         success = True
 
     if success:
         calendar = []
-        # Get the private events that the user is participating in
-        response = requests.get(
-            f"http://backend:8000/api/invites?username={calendar_user}"
-        )
+        try:
+            # Get the private events that the user is participating in
+            response = requests.get(
+                f"http://backend:8000/api/invites?username={calendar_user}"
+            )
+        except requests.exceptions.ConnectionError:
+            response = None
 
-        if succesful_request(response):
+        if response and succesful_request(response):
             events = [
                 invite["eventId"]
                 for invite in response.json()["invites"]
                 if invite["status"] in ["YES", "MAYBE"]
             ]
             for event in events:
-                response = requests.get(f"http://backend:8000/api/events/{event}")
-                if not succesful_request(response):
-                    continue
-                event = response.json()["event"]
-                calendar.append(
-                    (
-                        event["id"],
-                        event["title"],
-                        event["date"],
-                        event["organizer"],
-                        "Going",
-                        "Public" if event["isPublic"] else "Private",
+                try:
+                    response = requests.get(f"http://backend:8000/api/events/{event}")
+                except requests.exceptions.ConnectionError:
+                    break  # If server is down, don't continue fetching events
+
+                if succesful_request(response):
+                    event = response.json()["event"]
+                    calendar.append(
+                        (
+                            event["id"],
+                            event["title"],
+                            event["date"],
+                            event["organizer"],
+                            "Going",
+                            "Public" if event["isPublic"] else "Private",
+                        )
                     )
-                )
-        response = requests.get(
-            f"http://backend:8000/api/rsvp?username={calendar_user}"
-        )
-        if succesful_request(response):
+
+        try:
+            response = requests.get(
+                f"http://backend:8000/api/rsvp?username={calendar_user}"
+            )
+        except requests.exceptions.ConnectionError:
+            response = None
+
+        if response and succesful_request(response):
             events = [
                 (rsvp["eventId"], rsvp["status"])
                 for rsvp in response.json()["responses"]
                 if rsvp["status"] in ["YES", "MAYBE"]
             ]
             for event, status in events:
-                response = requests.get(f"http://backend:8000/api/events/{event}")
-                if not succesful_request(response):
-                    continue
-                event = response.json()["event"]
-                calendar.append(
-                    (
-                        event["id"],
-                        event["title"],
-                        event["date"],
-                        event["organizer"],
-                        "Going" if status == "YES" else "Maybe going",
-                        "Public" if event["isPublic"] else "Private",
+                try:
+                    response = requests.get(f"http://backend:8000/api/events/{event}")
+                except requests.exceptions.ConnectionError:
+                    break  # If server is down, don't continue fetching events
+                if succesful_request(response):
+                    event = response.json()["event"]
+                    calendar.append(
+                        (
+                            event["id"],
+                            event["title"],
+                            event["date"],
+                            event["organizer"],
+                            "Going" if status == "YES" else "Maybe going",
+                            "Public" if event["isPublic"] else "Private",
+                        )
                     )
-                )
     else:
         calendar = None
 
@@ -233,14 +263,16 @@ def share():
     # ========================================
     global username
 
-    response = requests.post(
-        "http://backend:8000/api/shares",
-        json={"sharingUser": username, "receivingUser": share_user},
-    )
+    try:
+        response = requests.post(
+            "http://backend:8000/api/shares",
+            json={"sharingUser": username, "receivingUser": share_user},
+        )
 
-    success = succesful_request(response)
-
-    save_to_session("success", success)
+        success = succesful_request(response)
+        save_to_session("success", success)
+    except requests.exceptions.ConnectionError:
+        success = False
 
     return render_template(
         "share.html", username=username, password=password, success=success
@@ -258,8 +290,11 @@ def view_event(eventid):
     # =================================
     global username
 
-    response = requests.get(f"http://backend:8000/api/events/{eventid}")
-    if not succesful_request(response):
+    try:
+        response = requests.get(f"http://backend:8000/api/events/{eventid}")
+        if not succesful_request(response):
+            return "Event not found", 404
+    except requests.exceptions.ConnectionError:
         return "Event not found", 404
 
     event = response.json()["event"]
@@ -267,24 +302,36 @@ def view_event(eventid):
     if event["isPublic"] or event["organizer"] == username:
         success = True
     else:
-        # Check if the user is invited
-        response = requests.get(
-            f"http://backend:8000/api/invites?eventId={eventid}&username={username}"
-        )
-        success = succesful_request(response)
-        if not success:
-            # Check if the user shares their calendar with the organizer
+        try:
+            # Check if the user is invited
             response = requests.get(
-                f"http://backend:8000/api/shares/by/{event['organizer']}/with/{username}"
+                f"http://backend:8000/api/invites?eventId={eventid}&username={username}"
             )
             success = succesful_request(response)
+        except requests.exceptions.ConnectionError:
+            success = False
+        if not success:
+            try:
+                # Check if the user shares their calendar with the organizer
+                response = requests.get(
+                    f"http://backend:8000/api/shares/by/{event['organizer']}/with/{username}"
+                )
+                success = succesful_request(response)
+            except requests.exceptions.ConnectionError:
+                success = False
 
     if success:
-        # Get the participants
-        response = requests.get(f"http://backend:8000/api/invites?eventId={eventid}")
+        try:
+            # Get the participants
+            response = requests.get(
+                f"http://backend:8000/api/invites?eventId={eventid}"
+            )
 
-        if not succesful_request(response):
+            if not succesful_request(response):
+                return "Event not found", 404
+        except requests.exceptions.ConnectionError:
             return "Event not found", 404
+
         participants = [
             [invite["username"], convert_status(invite["status"])]
             for invite in response.json()["invites"]
@@ -293,13 +340,18 @@ def view_event(eventid):
 
         # If the event is public, get the RSVPs
         if event["isPublic"]:
-            response = requests.get(f"http://backend:8000/api/rsvp?eventId={eventid}")
-            if succesful_request(response):
-                participants += [
-                    [rsvp["username"], convert_status(rsvp["status"])]
-                    for rsvp in response.json()["responses"]
-                    if rsvp["status"] in ["YES", "MAYBE"]
-                ]
+            try:
+                response = requests.get(
+                    f"http://backend:8000/api/rsvp?eventId={eventid}"
+                )
+                if succesful_request(response):
+                    participants += [
+                        [rsvp["username"], convert_status(rsvp["status"])]
+                        for rsvp in response.json()["responses"]
+                        if rsvp["status"] in ["YES", "MAYBE"]
+                    ]
+            except requests.exceptions.ConnectionError:
+                pass
 
         event = [
             event["title"],
@@ -329,12 +381,15 @@ def login():
     # microservice returns True if correct combination, False if otherwise.
     # Also pay attention to the status code returned by the microservice.
     # ================================
-    response = requests.post(
-        "http://backend:8000/api/auth/login",
-        json={"username": req_username, "password": req_password},
-    )
+    try:
+        response = requests.post(
+            "http://backend:8000/api/auth/login",
+            json={"username": req_username, "password": req_password},
+        )
 
-    success = succesful_request(response)
+        success = succesful_request(response)
+    except requests.exceptions.ConnectionError:
+        success = False
 
     save_to_session("success", success)
 
@@ -360,13 +415,15 @@ def register():
     #
     # Registration is successful if a user with the same username doesn't exist yet.
     # ================================
+    try:
+        response = requests.post(
+            "http://backend:8000/api/auth/register",
+            json={"username": req_username, "password": req_password},
+        )
 
-    response = requests.post(
-        "http://backend:8000/api/auth/register",
-        json={"username": req_username, "password": req_password},
-    )
-
-    success = succesful_request(response)
+        success = succesful_request(response)
+    except requests.exceptions.ConnectionError:
+        success = False
 
     save_to_session("success", success)
 
@@ -390,27 +447,34 @@ def invites():
     my_invites = []
     global username
 
-    response = requests.get(f"http://backend:8000/api/invites?username={username}")
+    try:
+        response = requests.get(f"http://backend:8000/api/invites?username={username}")
+    except requests.exceptions.ConnectionError:
+        response = None
 
-    if succesful_request(response):
+    if response and succesful_request(response):
         events = [
             invite["eventId"]
             for invite in response.json()["invites"]
             if invite["status"] == "PENDING"
         ]
+
         for event in events:
-            response = requests.get(f"http://backend:8000/api/events/{event}")
-            if succesful_request(response):
-                event = response.json()["event"]
-                my_invites.append(
-                    (
-                        event["id"],
-                        event["title"],
-                        event["date"],
-                        event["organizer"],
-                        "Public" if event["isPublic"] else "Private",
+            try:
+                response = requests.get(f"http://backend:8000/api/events/{event}")
+                if succesful_request(response):
+                    event = response.json()["event"]
+                    my_invites.append(
+                        (
+                            event["id"],
+                            event["title"],
+                            event["date"],
+                            event["organizer"],
+                            "Public" if event["isPublic"] else "Private",
+                        )
                     )
-                )
+            except requests.exceptions.ConnectionError:
+                break  # If server is down, don't continue fetching events
 
     return render_template(
         "invites.html", username=username, password=password, invites=my_invites
@@ -435,10 +499,13 @@ def process_invite():
     global username
     status = convert_status(status)
 
-    requests.put(
-        "http://backend:8000/api/invites",
-        json={"eventId": int(eventId), "username": username, "status": status},
-    )
+    try:
+        requests.put(
+            "http://backend:8000/api/invites",
+            json={"eventId": int(eventId), "username": username, "status": status},
+        )
+    except requests.exceptions.ConnectionError:
+        pass
 
     return redirect("/invites")
 
@@ -461,38 +528,50 @@ def rsvp():
     global username
     status = convert_status(status)
 
-    # Check if the user received a private invite before rsvp to public event
-    response = requests.get(
-        f"http://backend:8000/api/invites?eventId={eventId}&username={username}"
-    )
-    if succesful_request(response):
-        # If the user received an invite, update the invite
-        requests.put(
-            "http://backend:8000/api/invites",
-            json={"eventId": int(eventId), "username": username, "status": status},
+    try:
+        # Check if the user received a private invite before rsvp to public event
+        response = requests.get(
+            f"http://backend:8000/api/invites?eventId={eventId}&username={username}"
         )
-        save_to_session("success", True)
-        return redirect("/")
+    except requests.exceptions.ConnectionError:
+        response = None
+
+    # If the user received an invite, update the invite
+    if response and succesful_request(response):
+        try:
+            # If the user received an invite, update the invite
+            requests.put(
+                "http://backend:8000/api/invites",
+                json={"eventId": int(eventId), "username": username, "status": status},
+            )
+            save_to_session("success", True)
+            return redirect("/")
+        except requests.exceptions.ConnectionError:
+            pass
 
     # No invite => User is RSVPing to a public event
     # Check if the rsvp exists
-    response = requests.get(
-        f"http://backend:8000/api/rsvp?eventId={eventId}&username={username}"
-    )
-    if not succesful_request(response):
-        # If it doesn't exist, create it
-        requests.post(
-            "http://backend:8000/api/rsvp",
-            json={"eventId": int(eventId), "username": username, "status": status},
+    try:
+        response = requests.get(
+            f"http://backend:8000/api/rsvp?eventId={eventId}&username={username}"
         )
-    else:
-        # If it does exist, update it
-        requests.put(
-            "http://backend:8000/api/rsvp",
-            json={"eventId": int(eventId), "username": username, "status": status},
-        )
-
-    save_to_session("success", True)
+    except requests.exceptions.ConnectionError:
+        response = None
+    try:
+        if response and not succesful_request(response):
+            # If it doesn't exist, create it
+            requests.post(
+                "http://backend:8000/api/rsvp",
+                json={"eventId": int(eventId), "username": username, "status": status},
+            )
+        else:
+            # If it does exist, update it
+            requests.put(
+                "http://backend:8000/api/rsvp",
+                json={"eventId": int(eventId), "username": username, "status": status},
+            )
+    except requests.exceptions.ConnectionError:
+        pass
 
     return redirect("/")
 
