@@ -23,80 +23,6 @@ class RsvpResponseModel(BaseModel):
 
 
 @router.get("")
-def get_responses():
-    """
-    Get all responses
-    """
-    responses = find_all_responses()
-    return Response(
-        status_code=status.HTTP_200_OK,
-        content=json.dumps(
-            {
-                "responses": [
-                    {
-                        "eventId": response.eventId,
-                        "username": response.username,
-                        "status": response.status,
-                    }
-                    for response in responses
-                ]
-            }
-        ),
-        media_type="application/json",
-    )
-
-
-@router.get("")
-def get_response_by_user(
-    username: str = Query(default=None, description="User's username")
-):
-    """
-    Get response by user
-    """
-    responses = find_responses_by_user(username)
-    return Response(
-        status_code=status.HTTP_200_OK,
-        content=json.dumps(
-            {
-                "responses": [
-                    {
-                        "eventId": response.eventId,
-                        "username": response.username,
-                        "status": response.status,
-                    }
-                    for response in responses
-                ]
-            }
-        ),
-        media_type="application/json",
-    )
-
-
-@router.get("")
-def get_response_by_event(eventId: int = Query(default=None, description="Event's ID")):
-    """
-    Get response by event
-    """
-    responses = find_response_by_event(eventId)
-    return Response(
-        status_code=status.HTTP_200_OK,
-        content=json.dumps(
-            {
-                "responses": [
-                    {
-                        "eventId": response.eventId,
-                        "username": response.username,
-                        "status": response.status,
-                    }
-                    for response in responses
-                ]
-            }
-        ),
-        media_type="application/json",
-    )
-
-
-@router.get("")
 def get_response(
     username: str = Query(default=None, description="User's username"),
     eventId: int = Query(default=None, description="Event's ID"),
@@ -104,22 +30,45 @@ def get_response(
     """
     Get response by user and event ID
     """
-    response = find_response(eventId, username)
-    if not response:
+    if username and eventId:
+        response = find_response(eventId, username)
+        if not response:
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Response not found"}),
+                media_type="application/json",
+            )
         return Response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content=json.dumps({"error": "Response not found"}),
+            status_code=status.HTTP_200_OK,
+            content=json.dumps(
+                {
+                    "response": {
+                        "eventId": response.eventId,
+                        "username": response.username,
+                        "status": response.status,
+                    }
+                }
+            ),
             media_type="application/json",
         )
+    elif username:
+        responses = find_responses_by_user(username)
+    elif eventId:
+        responses = find_response_by_event(eventId)
+    else:
+        responses = find_all_responses()
     return Response(
         status_code=status.HTTP_200_OK,
         content=json.dumps(
             {
-                "response": {
-                    "eventId": response.eventId,
-                    "username": response.username,
-                    "status": response.status,
-                }
+                "responses": [
+                    {
+                        "eventId": response.eventId,
+                        "username": response.username,
+                        "status": response.status,
+                    }
+                    for response in responses
+                ]
             }
         ),
         media_type="application/json",
