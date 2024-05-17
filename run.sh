@@ -1,7 +1,12 @@
 #! /bin/bash
 
-trap 'echo "Caught signal, exiting..."; exit 1' SIGINT SIGTERM
+cleanup() {
+    echo "Cleaning up..."
+    podman compose down --remove-orphans
+}
 
+trap 'echo "Caught signal, exiting..."; cleanup; exit 1' SIGINT SIGTERM
+trap cleanup EXIT
 
 pull_images() {
     echo "Pulling images..."
