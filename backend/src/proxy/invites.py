@@ -27,13 +27,19 @@ class DeleteInviteModel(BaseModel):
 
 
 def check_user_exists(username: str):
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    return response.status_code == 200
+    try:
+        response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
+        return response.status_code == 200
+    except httpx.ConnectError:
+        return False
 
 
 def check_event_exists(eventId: int):
-    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
-    return response.status_code == 200
+    try:
+        response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
+        return response.status_code == 200
+    except httpx.ConnectError:
+        return False
 
 
 @router.get(
@@ -62,7 +68,7 @@ def check_event_exists(eventId: int):
         },
     },
 )
-def get_invite(
+async def get_invite(
     username: str = Query(default=None, description="User's username"),
     eventId: int = Query(default=None, description="Event's ID"),
 ):
@@ -71,12 +77,19 @@ def get_invite(
         params["username"] = username
     if eventId:
         params["eventId"] = eventId
-    response = httpx.get("http://invites-service:8000/api/invites", params=params)
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get("http://invites-service:8000/api/invites", params=params)
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.post(
@@ -110,7 +123,7 @@ def get_invite(
         },
     },
 )
-def create_invite(invite: InviteModel):
+async def create_invite(invite: InviteModel):
     # Check if user and event exist
 
     if not check_user_exists(invite.username):
@@ -126,20 +139,26 @@ def create_invite(invite: InviteModel):
             media_type="application/json",
         )
     # Create invite
-
-    response = httpx.post(
-        "http://invites-service:8000/api/invites",
-        json={
-            "eventId": invite.eventId,
-            "username": invite.username,
-            "status": invite.status.value,
-        },
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.post(
+            "http://invites-service:8000/api/invites",
+            json={
+                "eventId": invite.eventId,
+                "username": invite.username,
+                "status": invite.status.value,
+            },
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.put(
@@ -169,20 +188,27 @@ def create_invite(invite: InviteModel):
         },
     },
 )
-def update_invite(invite: InviteModel):
-    response = httpx.put(
-        "http://invites-service:8000/api/invites",
-        json={
-            "eventId": invite.eventId,
-            "username": invite.username,
-            "status": invite.status.value,
-        },
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+async def update_invite(invite: InviteModel):
+    try:
+        response = httpx.put(
+            "http://invites-service:8000/api/invites",
+            json={
+                "eventId": invite.eventId,
+                "username": invite.username,
+                "status": invite.status.value,
+            },
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.delete(
@@ -202,12 +228,19 @@ def update_invite(invite: InviteModel):
         },
     },
 )
-def delete_invite(eventId: int, username: str):
-    response = httpx.delete(
-        f"http://invites-service:8000/api/invites/{eventId}/{username}",
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+async def delete_invite(eventId: int, username: str):
+    try:
+        response = httpx.delete(
+            f"http://invites-service:8000/api/invites/{eventId}/{username}",
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )

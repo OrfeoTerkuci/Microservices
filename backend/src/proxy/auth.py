@@ -36,15 +36,22 @@ async def login(user: UserModel) -> Response:
     :param user: UserModel object with username and password
     :return: Response with status code 200 if login is successful, 401 otherwise
     """
-    response = httpx.post(
-        "http://auth-service:8000/api/auth/login",
-        json={"username": user.username, "password": user.password},
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.post(
+            "http://auth-service:8000/api/auth/login",
+            json={"username": user.username, "password": user.password},
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=500,
+            content={"error": "Internal server error"},
+            media_type="application/json",
+        )
 
 
 @router.post(
@@ -78,12 +85,19 @@ async def register(user: UserModel) -> Response:
     400 if username or password is missing,
     409 if user already exists
     """
-    response = httpx.post(
-        "http://auth-service:8000/api/auth/register",
-        json={"username": user.username, "password": user.password},
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.post(
+            "http://auth-service:8000/api/auth/register",
+            json={"username": user.username, "password": user.password},
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=500,
+            content={"error": "Internal server error"},
+            media_type="application/json",
+        )

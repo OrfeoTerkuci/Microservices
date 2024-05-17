@@ -25,13 +25,19 @@ class RsvpResponseModel(BaseModel):
 
 
 def check_user_exists(username: str):
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    return response.status_code == 200
+    try:
+        response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
+        return response.status_code == 200
+    except httpx.HTTPStatusError:
+        return False
 
 
 def check_public_event_exists(eventId: int):
-    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
-    return response.status_code == 200 and response.json()["event"]["isPublic"]
+    try:
+        response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
+        return response.status_code == 200 and response.json()["event"]["isPublic"]
+    except httpx.HTTPStatusError:
+        return False
 
 
 @router.get(
@@ -62,7 +68,7 @@ def check_public_event_exists(eventId: int):
         },
     },
 )
-def get_responses(
+async def get_responses(
     username: str = Query(default=None, description="User's username"),
     eventId: int = Query(default=None, description="Event's ID"),
 ):
@@ -74,12 +80,19 @@ def get_responses(
         params["username"] = username
     if eventId:
         params["eventId"] = eventId
-    response = httpx.get("http://rsvp-service:8000/api/rsvp", params=params)
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get("http://rsvp-service:8000/api/rsvp", params=params)
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.post(
@@ -113,7 +126,7 @@ def get_responses(
         },
     },
 )
-def create_response(response: RsvpResponseModel):
+async def create_response(response: RsvpResponseModel):
     """
     Create response
     """
@@ -131,19 +144,26 @@ def create_response(response: RsvpResponseModel):
             content=json.dumps({"error": "Public event not found"}),
             media_type="application/json",
         )
-    result = httpx.post(
-        "http://rsvp-service:8000/api/rsvp",
-        json={
-            "eventId": response.eventId,
-            "username": response.username,
-            "status": response.status.value,
-        },
-    )
-    return Response(
-        status_code=result.status_code,
-        content=result.content,
-        media_type="application/json",
-    )
+    try:
+        result = httpx.post(
+            "http://rsvp-service:8000/api/rsvp",
+            json={
+                "eventId": response.eventId,
+                "username": response.username,
+                "status": response.status.value,
+            },
+        )
+        return Response(
+            status_code=result.status_code,
+            content=result.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.put(
@@ -171,23 +191,30 @@ def create_response(response: RsvpResponseModel):
         },
     },
 )
-def update_response(response: RsvpResponseModel):
+async def update_response(response: RsvpResponseModel):
     """
     Update response
     """
-    result = httpx.put(
-        "http://rsvp-service:8000/api/rsvp",
-        json={
-            "eventId": response.eventId,
-            "username": response.username,
-            "status": response.status.value,
-        },
-    )
-    return Response(
-        status_code=result.status_code,
-        content=result.content,
-        media_type="application/json",
-    )
+    try:
+        result = httpx.put(
+            "http://rsvp-service:8000/api/rsvp",
+            json={
+                "eventId": response.eventId,
+                "username": response.username,
+                "status": response.status.value,
+            },
+        )
+        return Response(
+            status_code=result.status_code,
+            content=result.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.delete(
@@ -215,13 +242,20 @@ def update_response(response: RsvpResponseModel):
         },
     },
 )
-def delete_response(eventId: int, username: str):
+async def delete_response(eventId: int, username: str):
     """
     Delete response
     """
-    result = httpx.delete(f"http://rsvp-service:8000/api/rsvp/{eventId}/{username}")
-    return Response(
-        status_code=result.status_code,
-        content=result.content,
-        media_type="application/json",
-    )
+    try:
+        result = httpx.delete(f"http://rsvp-service:8000/api/rsvp/{eventId}/{username}")
+        return Response(
+            status_code=result.status_code,
+            content=result.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )

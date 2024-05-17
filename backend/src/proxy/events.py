@@ -53,12 +53,19 @@ async def get_events():
     """
     Get events.
     """
-    response = httpx.get("http://events-service:8000/api/events")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get("http://events-service:8000/api/events")
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.get(
@@ -97,12 +104,19 @@ async def get_public_events():
     """
     Get public events.
     """
-    response = httpx.get("http://events-service:8000/api/events/public")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get("http://events-service:8000/api/events/public")
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.get(
@@ -143,12 +157,19 @@ async def get_event(eventId: int):
     """
     Get event by ID.
     """
-    response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get(f"http://events-service:8000/api/events/{eventId}")
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.post(
@@ -190,9 +211,16 @@ async def get_event(eventId: int):
 async def create_event(event: EventModel):
     # Check if the organizer is valid
 
-    response = httpx.get(
-        f"http://auth-service:8000/api/users?username={event.organizer}"
-    )
+    try:
+        response = httpx.get(
+            f"http://auth-service:8000/api/users?username={event.organizer}"
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
     if response.status_code == 200:
         response = httpx.post(
             "http://events-service:8000/api/events",
@@ -256,9 +284,16 @@ async def modify_event(eventId: int, event: EventModel):
     """
     Update an event by its id.
     """
-    response = httpx.get(
-        f"http://auth-service:8000/api/users?username={event.organizer}"
-    )
+    try:
+        response = httpx.get(
+            f"http://auth-service:8000/api/users?username={event.organizer}"
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
     if response.status_code == 200:
         response = httpx.put(
             f"http://events-service:8000/api/events/{eventId}",
@@ -307,9 +342,16 @@ async def delete_event(eventId: int):
     """
     Delete an event by its id.
     """
-    response = httpx.delete(f"http://events-service:8000/api/events/{eventId}")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.delete(f"http://events-service:8000/api/events/{eventId}")
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )

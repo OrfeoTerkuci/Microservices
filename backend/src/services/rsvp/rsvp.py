@@ -86,6 +86,7 @@ def create_rsvp(response: RsvpResponseModel):
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=json.dumps({"error": str(exc)}),
+            media_type="application/json",
         )
     return Response(
         status_code=status.HTTP_201_CREATED,

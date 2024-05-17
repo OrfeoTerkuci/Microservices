@@ -18,11 +18,8 @@ class UserModel(BaseModel):
     "",
     summary="Get user(s)",
     description="""Get user(s). If no query parameters are provided, 
-
     all users are returned. If only one query parameter is provided, 
-
     the search is filtered by that parameter (username or userId). 
-
     If both are provided, the search is done for a specific user.""",
     responses={
         200: {
@@ -57,12 +54,19 @@ async def get_user(
     # If no username or id is provided, return all users
 
     if not user_id and not username:
-        response = httpx.get("http://auth-service:8000/api/users")
-        return Response(
-            status_code=response.status_code,
-            content=response.content,
-            media_type="application/json",
-        )
+        try:
+            response = httpx.get("http://auth-service:8000/api/users")
+            return Response(
+                status_code=response.status_code,
+                content=response.content,
+                media_type="application/json",
+            )
+        except httpx.ConnectError:
+            return Response(
+                status_code=500,
+                content={"error": "Internal server error"},
+                media_type="application/json",
+            )
     # Set the query parameters
 
     params = {}
@@ -72,12 +76,19 @@ async def get_user(
         params["username"] = username
     # Send the request to the auth service
 
-    response = httpx.get(
-        f"http://auth-service:8000/api/users",
-        params=params,
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get(
+            f"http://auth-service:8000/api/users",
+            params=params,
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=500,
+            content={"error": "Internal server error"},
+            media_type="application/json",
+        )

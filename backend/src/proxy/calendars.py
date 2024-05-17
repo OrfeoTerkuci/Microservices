@@ -17,9 +17,11 @@ class CalendarShareModel(BaseModel):
 
 
 def check_user_exists(username: str):
-    response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
-    return response.status_code == 200
-
+    try:
+        response = httpx.get(f"http://auth-service:8000/api/users?username={username}")
+        return response.status_code == 200
+    except httpx.ConnectError:
+        return False
 
 @router.get(
     "",
@@ -40,18 +42,25 @@ def check_user_exists(username: str):
         },
     },
 )
-def get_calendars():
+async def get_calendars():
     """
     Get all shared calendars.
 
     :returns: A list of all shared calendars.
     """
-    response = httpx.get("http://calendars-service:8000/api/shares")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get("http://calendars-service:8000/api/shares")
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.get(
@@ -73,7 +82,7 @@ def get_calendars():
         },
     },
 )
-def get_calendars_by(username: str):
+async def get_calendars_by(username: str):
     """
     Get all calendars shared by a user.
 
@@ -81,12 +90,19 @@ def get_calendars_by(username: str):
 
     :returns: A list of shared calendars.
     """
-    response = httpx.get(f"http://calendars-service:8000/api/shares/by/{username}")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get(f"http://calendars-service:8000/api/shares/by/{username}")
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.get(
@@ -108,7 +124,7 @@ def get_calendars_by(username: str):
         },
     },
 )
-def get_calendars_with(username: str):
+async def get_calendars_with(username: str):
     """
     Get all calendars shared with a user.
 
@@ -116,12 +132,21 @@ def get_calendars_with(username: str):
 
     :returns: A list of shared calendars.
     """
-    response = httpx.get(f"http://calendars-service:8000/api/shares/with/{username}")
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get(
+            f"http://calendars-service:8000/api/shares/with/{username}"
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.get(
@@ -143,7 +168,7 @@ def get_calendars_with(username: str):
         },
     },
 )
-def get_calendars_by_with(username: str, receivingUser: str):
+async def get_calendars_by_with(username: str, receivingUser: str):
     """
     Get all calendars shared by a user with another user.
 
@@ -152,14 +177,21 @@ def get_calendars_by_with(username: str, receivingUser: str):
 
     :returns: A list of shared calendars.
     """
-    response = httpx.get(
-        f"http://calendars-service:8000/api/shares/by/{username}/with/{receivingUser}"
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.get(
+            f"http://calendars-service:8000/api/shares/by/{username}/with/{receivingUser}"
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.post(
@@ -194,7 +226,7 @@ def get_calendars_by_with(username: str, receivingUser: str):
         },
     },
 )
-def share_calendar(calendar: CalendarShareModel):
+async def share_calendar(calendar: CalendarShareModel):
     # Check that both users exist
 
     if not check_user_exists(calendar.sharingUser):
@@ -211,18 +243,25 @@ def share_calendar(calendar: CalendarShareModel):
         )
     # Share calendar
 
-    response = httpx.post(
-        "http://calendars-service:8000/api/shares",
-        json={
-            "sharingUser": calendar.sharingUser,
-            "receivingUser": calendar.receivingUser,
-        },
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.post(
+            "http://calendars-service:8000/api/shares",
+            json={
+                "sharingUser": calendar.sharingUser,
+                "receivingUser": calendar.receivingUser,
+            },
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
 
 
 @router.delete(
@@ -257,7 +296,7 @@ def share_calendar(calendar: CalendarShareModel):
         },
     },
 )
-def delete_calendar(calendar: CalendarShareModel):
+async def delete_calendar(calendar: CalendarShareModel):
     # Check that both users exist
 
     if not check_user_exists(calendar.sharingUser):
@@ -274,11 +313,18 @@ def delete_calendar(calendar: CalendarShareModel):
         )
     # Delete calendar
 
-    response = httpx.delete(
-        f"http://calendars-service:8000/api/shares/{calendar.sharingUser}/{calendar.receivingUser}"
-    )
-    return Response(
-        status_code=response.status_code,
-        content=response.content,
-        media_type="application/json",
-    )
+    try:
+        response = httpx.delete(
+            f"http://calendars-service:8000/api/shares/{calendar.sharingUser}/{calendar.receivingUser}"
+        )
+        return Response(
+            status_code=response.status_code,
+            content=response.content,
+            media_type="application/json",
+        )
+    except httpx.ConnectError:
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=json.dumps({"error": "Internal server error"}),
+            media_type="application/json",
+        )
