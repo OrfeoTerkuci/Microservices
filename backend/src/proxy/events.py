@@ -17,7 +17,38 @@ class EventModel(BaseModel):
     isPublic: bool
 
 
-@router.get("")
+@router.get(
+    "",
+    summary="Get all events",
+    description="Get all events.",
+    responses={
+        200: {
+            "description": "All the events",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "events": [
+                            {
+                                "id": 1,
+                                "title": "Independence!!!",
+                                "description": "Chase those Ottomans (not the couches) away!",
+                                "date": "1912-11-28",
+                                "organizer": "Ismail Qemali",
+                                "isPublic": True,
+                            }
+                        ]
+                    }
+                }
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 async def get_events():
     """
     Get events.
@@ -30,7 +61,38 @@ async def get_events():
     )
 
 
-@router.get("/public")
+@router.get(
+    "/public",
+    summary="Get all public events",
+    description="Get all public events.",
+    responses={
+        200: {
+            "description": "All the public events",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "events": [
+                            {
+                                "id": 1,
+                                "title": "Independence!!!",
+                                "description": "Chase those Ottomans (not the couches) away!",
+                                "date": "1912-11-28",
+                                "organizer": "Ismail Qemali",
+                                "isPublic": True,
+                            }
+                        ]
+                    }
+                }
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 async def get_public_events():
     """
     Get public events.
@@ -43,7 +105,40 @@ async def get_public_events():
     )
 
 
-@router.get("/{eventId}")
+@router.get(
+    "/{eventId}",
+    summary="Get event by ID",
+    description="Get event by ID.",
+    responses={
+        200: {
+            "description": "The event",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event": {
+                            "id": 1,
+                            "title": "Independence!!!",
+                            "description": "Chase those Ottomans (not the couches) away!",
+                            "date": "1912-11-28",
+                            "organizer": "Ismail Qemali",
+                            "isPublic": True,
+                        }
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Event not found",
+            "content": {"application/json": {"example": {"error": "Event not found"}}},
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 async def get_event(eventId: int):
     """
     Get event by ID.
@@ -56,7 +151,42 @@ async def get_event(eventId: int):
     )
 
 
-@router.post("")
+@router.post(
+    "",
+    summary="Create an event",
+    description="Create an event.",
+    responses={
+        201: {
+            "description": "Event created",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event": {
+                            "id": 1,
+                            "title": "Independence!!!",
+                            "description": "Chase those Ottomans (not the couches) away!",
+                            "date": "1912-11-28",
+                            "organizer": "Ismail Qemali",
+                            "isPublic": True,
+                        }
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Organizer not found",
+            "content": {
+                "application/json": {"example": {"error": "Organizer not found"}}
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 async def create_event(event: EventModel):
     # Check if the organizer is valid
 
@@ -86,7 +216,42 @@ async def create_event(event: EventModel):
     )
 
 
-@router.put("/{eventId}")
+@router.put(
+    "/{eventId}",
+    summary="Update an event by ID",
+    description="Update an event by ID.",
+    responses={
+        200: {
+            "description": "Event updated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event": {
+                            "id": 1,
+                            "title": "Independence!!!",
+                            "description": "Chase those Ottomans (not the couches) away!",
+                            "date": "1912-11-28",
+                            "organizer": "Ismail Qemali",
+                            "isPublic": True,
+                        }
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Organizer not found",
+            "content": {
+                "application/json": {"example": {"error": "Organizer not found"}}
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 async def modify_event(eventId: int, event: EventModel):
     """
     Update an event by its id.
@@ -117,7 +282,27 @@ async def modify_event(eventId: int, event: EventModel):
     )
 
 
-@router.delete("/{eventId}")
+@router.delete(
+    "/{eventId}",
+    summary="Delete an event by ID",
+    description="Delete an event by ID.",
+    responses={
+        200: {
+            "description": "Event deleted",
+            "content": {"application/json": {"example": {"message": "Event deleted"}}},
+        },
+        404: {
+            "description": "Event not found",
+            "content": {"application/json": {"example": {"error": "Event not found"}}},
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 async def delete_event(eventId: int):
     """
     Delete an event by its id.

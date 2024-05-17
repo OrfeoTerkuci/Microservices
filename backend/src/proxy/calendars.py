@@ -21,7 +21,25 @@ def check_user_exists(username: str):
     return response.status_code == 200
 
 
-@router.get("")
+@router.get(
+    "",
+    summary="Get all shared calendars",
+    description="Get all shared calendars.",
+    responses={
+        200: {
+            "description": "All the shared calendars",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calendars": [
+                            {"sharingUser": "john_doe", "receivingUser": "jane_doe"}
+                        ]
+                    }
+                }
+            },
+        },
+    },
+)
 def get_calendars():
     """
     Get all shared calendars.
@@ -36,7 +54,25 @@ def get_calendars():
     )
 
 
-@router.get("/by/{username}")
+@router.get(
+    "/by/{username}",
+    summary="Get all calendars shared by a user",
+    description="Get all calendars shared by a specific user.",
+    responses={
+        200: {
+            "description": "All the calendars shared by a user",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calendars": [
+                            {"sharingUser": "john_doe", "receivingUser": "jane_doe"}
+                        ]
+                    }
+                }
+            },
+        },
+    },
+)
 def get_calendars_by(username: str):
     """
     Get all calendars shared by a user.
@@ -53,7 +89,25 @@ def get_calendars_by(username: str):
     )
 
 
-@router.get("/with/{username}")
+@router.get(
+    "/with/{username}",
+    summary="Get all calendars shared with a user",
+    description="Get all calendars shared with a specific user.",
+    responses={
+        200: {
+            "description": "All the calendars shared with a user",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calendars": [
+                            {"sharingUser": "john_doe", "receivingUser": "jane_doe"}
+                        ]
+                    }
+                }
+            },
+        },
+    },
+)
 def get_calendars_with(username: str):
     """
     Get all calendars shared with a user.
@@ -70,7 +124,25 @@ def get_calendars_with(username: str):
     )
 
 
-@router.get("/by/{username}/with/{receivingUser}")
+@router.get(
+    "/by/{username}/with/{receivingUser}",
+    summary="Search for a specific sharing user and receiving user",
+    description="Get a specific shared calendar by sharing user and receiving user.",
+    responses={
+        200: {
+            "description": "Result for a specific sharing user and receiving user",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calendars": [
+                            {"sharingUser": "john_doe", "receivingUser": "jane_doe"}
+                        ]
+                    }
+                }
+            },
+        },
+    },
+)
 def get_calendars_by_with(username: str, receivingUser: str):
     """
     Get all calendars shared by a user with another user.
@@ -90,7 +162,38 @@ def get_calendars_by_with(username: str, receivingUser: str):
     )
 
 
-@router.post("")
+@router.post(
+    "",
+    summary="Share a calendar",
+    description="Share a calendar from one user with another.",
+    responses={
+        200: {
+            "description": "Calendar shared",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calendar": {
+                            "sharingUser": "john_doe",
+                            "receivingUser": "jane_doe",
+                        }
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Sharing or receiving user not found",
+            "content": {
+                "application/json": {"example": {"error": "Sharing user not found"}}
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def share_calendar(calendar: CalendarShareModel):
     # Check that both users exist
 
@@ -122,7 +225,38 @@ def share_calendar(calendar: CalendarShareModel):
     )
 
 
-@router.delete("")
+@router.delete(
+    "",
+    summary="Delete a calendar share",
+    description="Delete a calendar share between two users.",
+    responses={
+        200: {
+            "description": "Calendar share successfully deleted",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calendar": {
+                            "sharingUser": "john_doe",
+                            "receivingUser": "jane_doe",
+                        }
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Sharing or receiving user not found",
+            "content": {
+                "application/json": {"example": {"error": "Sharing user not found"}}
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def delete_calendar(calendar: CalendarShareModel):
     # Check that both users exist
 

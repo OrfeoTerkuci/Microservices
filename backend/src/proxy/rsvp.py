@@ -34,7 +34,34 @@ def check_public_event_exists(eventId: int):
     return response.status_code == 200 and response.json()["event"]["isPublic"]
 
 
-@router.get("")
+@router.get(
+    "",
+    summary="Get responses",
+    description="""Get responses by user and event ID.
+            If no parameters are provided, all responses will be returned.
+            If only one parameter is provided,
+            responses will be filtered by that parameter.""",
+    responses={
+        200: {
+            "description": "Responses",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "responses": [
+                            {"eventId": 1, "username": "john_doe", "status": "YES"}
+                        ]
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Response not found",
+            "content": {
+                "application/json": {"example": {"error": "Response not found"}}
+            },
+        },
+    },
+)
 def get_responses(
     username: str = Query(default=None, description="User's username"),
     eventId: int = Query(default=None, description="Event's ID"),
@@ -55,7 +82,37 @@ def get_responses(
     )
 
 
-@router.post("")
+@router.post(
+    "",
+    summary="Create response",
+    description="Create a new response",
+    responses={
+        201: {
+            "description": "Response created",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "eventId": 1,
+                        "username": "john_doe",
+                        "status": "YES",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "User or event not found",
+            "content": {
+                "application/json": {"example": {"error": "User or event not found"}}
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def create_response(response: RsvpResponseModel):
     """
     Create response
@@ -89,7 +146,31 @@ def create_response(response: RsvpResponseModel):
     )
 
 
-@router.put("")
+@router.put(
+    "",
+    summary="Update response",
+    description="Update response",
+    responses={
+        200: {
+            "description": "Response updated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "eventId": 1,
+                        "username": "john_doe",
+                        "status": "YES",
+                    }
+                }
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def update_response(response: RsvpResponseModel):
     """
     Update response
@@ -109,7 +190,31 @@ def update_response(response: RsvpResponseModel):
     )
 
 
-@router.delete("/{eventId}/{username}")
+@router.delete(
+    "/{eventId}/{username}",
+    summary="Delete response",
+    description="Delete response",
+    responses={
+        200: {
+            "description": "Response deleted",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "eventId": 1,
+                        "username": "john_doe",
+                        "status": "YES",
+                    }
+                }
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def delete_response(eventId: int, username: str):
     """
     Delete response

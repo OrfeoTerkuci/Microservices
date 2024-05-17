@@ -36,7 +36,32 @@ def check_event_exists(eventId: int):
     return response.status_code == 200
 
 
-@router.get("")
+@router.get(
+    "",
+    summary="Get invites",
+    description="""Get invites by user and event ID. 
+    If no parameters are provided, all invites will be returned. 
+    If only one parameter is provided, 
+    invites will be filtered by that parameter.""",
+    responses={
+        200: {
+            "description": "Invites",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "invites": [
+                            {"eventId": 1, "username": "john_doe", "status": "YES"}
+                        ]
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Invite not found",
+            "content": {"application/json": {"example": {"error": "Invite not found"}}},
+        },
+    },
+)
 def get_invite(
     username: str = Query(default=None, description="User's username"),
     eventId: int = Query(default=None, description="Event's ID"),
@@ -54,7 +79,37 @@ def get_invite(
     )
 
 
-@router.post("")
+@router.post(
+    "",
+    summary="Create invite",
+    description="Create invite",
+    responses={
+        201: {
+            "description": "Invite created",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event": {
+                            "eventId": 1,
+                            "username": "john_doe",
+                            "status": "YES",
+                        }
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "User or event not found",
+            "content": {"application/json": {"example": {"error": "User not found"}}},
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def create_invite(invite: InviteModel):
     # Check if user and event exist
 
@@ -87,7 +142,33 @@ def create_invite(invite: InviteModel):
     )
 
 
-@router.put("")
+@router.put(
+    "",
+    summary="Update invite",
+    description="Update invite",
+    responses={
+        200: {
+            "description": "Invite updated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event": {
+                            "eventId": 1,
+                            "username": "john_doe",
+                            "status": "YES",
+                        }
+                    }
+                }
+            },
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def update_invite(invite: InviteModel):
     response = httpx.put(
         "http://invites-service:8000/api/invites",
@@ -104,7 +185,23 @@ def update_invite(invite: InviteModel):
     )
 
 
-@router.delete("/{eventId}/{username}")
+@router.delete(
+    "/{eventId}/{username}",
+    summary="Delete invite",
+    description="Delete invite",
+    responses={
+        200: {
+            "description": "Invite deleted",
+            "content": {"application/json": {"example": {"message": "Invite deleted"}}},
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {"example": {"error": "Internal server error"}}
+            },
+        },
+    },
+)
 def delete_invite(eventId: int, username: str):
     response = httpx.delete(
         f"http://invites-service:8000/api/invites/{eventId}/{username}",
