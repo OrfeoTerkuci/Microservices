@@ -180,7 +180,7 @@ services:
     hostname: db
     image: postgres:16.2-bookworm
     ports:
-      - "127.0.0.1:5432:5432" # Left side is external network, right side is internal network
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: "pg_isready -U '${APP_DB_USER}' -d '${AUTH_DB_NAME}' || exit 1"
       interval: 10s
