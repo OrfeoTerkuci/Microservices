@@ -62,7 +62,7 @@ def home():
 
         if succesful_request(response):
             public_events = [
-                (event["title"], event["date"], event["organizer"])
+                (event["id"], event["title"], event["date"], event["organizer"])
                 for event in response.json()["events"]
             ]
 
@@ -264,13 +264,20 @@ def view_event(eventid):
 
     event = response.json()["event"]
 
-    if event["isPublic"]:
+    if event["isPublic"] or event["organizer"] == username:
         success = True
     else:
+        # Check if the user is invited
         response = requests.get(
             f"http://backend:8000/api/invites?eventId={eventid}&username={username}"
         )
         success = succesful_request(response)
+        if not success:
+            # Check if the user shares their calendar with the organizer
+            response = requests.get(
+                f"http://backend:8000/api/shares/by/{event['organizer']}/with/{username}"
+            )
+            success = succesful_request(response)
 
     if success:
         # Get the participants
@@ -423,6 +430,31 @@ def process_invite():
     )
 
     return redirect("/invites")
+
+
+@app.route("/rsvp", methods=["POST"])
+def rsvp():
+    if request.json is None or not isinstance(request.json, dict):
+        return "Invalid request", 400
+
+    eventId, status = request.json.get("event", None), request.json.get("status", None)
+
+    if not eventId or not status:
+        return "Invalid request", 400
+
+    # =======================
+    # FEATURE (rsvp)
+    #
+    # rsvp to a public event (accept, maybe, don't accept)
+    # =======================
+    global username
+    status = convert_status(status)
+
+    requests.put(
+        "http://backend:8000/api/rsvp",
+        json={"eventId": int(eventId), "username": username, "status": status},
+    )
+    return redirect("/")
 
 
 @app.route("/logout")
