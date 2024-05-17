@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.12-rc-slim-buster
 
 COPY requirements.txt invites/requirements.txt
 WORKDIR /invites
