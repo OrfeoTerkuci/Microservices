@@ -27,6 +27,7 @@ services:
     networks:
       - host
       - backend
+    restart: unless-stopped
     healthcheck:
       test: if [ $(curl -LI http://127.0.0.1:8000/api/health -o /dev/null -w '%{http_code}\n' -s) == "200" ]; then echo 0; fi || exit 1
       interval: 10s
@@ -61,6 +62,7 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 5
+    restart: unless-stopped
     depends_on:
       auth-db:
         condition: service_healthy
@@ -87,6 +89,7 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 5
+    restart: unless-stopped
     depends_on:
       events-db:
         condition: service_healthy
@@ -107,6 +110,7 @@ services:
     networks:
       - backend
       - invites-db
+    restart: unless-stopped
     healthcheck:
       test: if [ $(curl -LI http://127.0.0.1:8000/api/health -o /dev/null -w '%{http_code}\n' -s) == "200" ]; then echo 0; fi || exit 1
       interval: 10s
@@ -133,6 +137,7 @@ services:
     networks:
       - backend
       - rsvp-db
+    restart: unless-stopped
     healthcheck:
       test: if [ $(curl -LI http://127.0.0.1:8000/api/health -o /dev/null -w '%{http_code}\n' -s) == "200" ]; then echo 0; fi || exit 1
       interval: 10s
@@ -159,6 +164,7 @@ services:
     networks:
       - backend
       - calendars-db
+    restart: unless-stopped
     healthcheck:
       test: if [ $(curl -LI http://127.0.0.1:8000/api/health -o /dev/null -w '%{http_code}\n' -s) == "200" ]; then echo 0; fi || exit 1
       interval: 10s
