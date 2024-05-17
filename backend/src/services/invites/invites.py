@@ -49,7 +49,7 @@ def get_invite(
             status_code=status.HTTP_200_OK,
             content=json.dumps(
                 {
-                    f"invites": {
+                    "invite": {
                         "eventId": invite.eventId,
                         "username": invite.username,
                         "status": invite.status,
