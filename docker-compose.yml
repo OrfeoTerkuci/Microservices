@@ -1,9 +1,8 @@
 name: microservices
 services:
-  # Legacy frontend
-  frontend_legacy:
-    container_name: frontend_legacy
-    build: ./frontend_legacy
+  frontend:
+    container_name: frontend
+    build: ./frontend
     ports:
       - "127.0.0.1:5000:5000"
     networks:
@@ -15,22 +14,8 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./frontend_legacy
+          path: ./frontend
           target: /app
-
-  # frontend:
-  #   container_name: frontend
-  #   build: ./
-  #   command: ["bash", "-c", "npm install && npm run dev"]
-  #   ports:
-  #     - 8080:8080
-  #   volumes:
-  #     - ./frontend:/frontend
-  #   # Override the default stop signal
-  #   stop_signal: SIGKILL
-  #   # depends_on:
-  #   #   db:
-  #   #     condition: service_healthy
 
   backend:
     container_name: proxy
