@@ -16,8 +16,11 @@
                 <li> {{ participant[0] }} ({{ participant[1] }})</li>
             {% endfor %}
         </ul>
-
-
+            {% if event[3] == "Public" %}  {# In public events, you can always choose to participate #}
+            <button class="btn btn-primary" value="{{ event[5] }}">Participate</button>
+            <button class="btn btn-primary" value="{{ event[5] }}">Maybe Participate</button>
+            <button class="btn btn-primary" value="{{ event[5] }}">Don't Participate</button>
+            {% endif %}
         {% else %}
         <div class="alert alert-danger" role="alert">
             You do not have access to this event!
@@ -25,4 +28,24 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    $(document).ready(function(){
+        $(":button").click(function(){
+            jQuery.ajax({
+                url: '/rsvp',
+                type: "POST",
+                data: JSON.stringify({
+                    'event': $(this).attr("value"),
+                    'status': $(this).text()
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function(){}
+            }).always(function(){
+                location.reload();
+            });
+        });
+    });
+</script>
 {% endblock %}

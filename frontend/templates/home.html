@@ -17,10 +17,6 @@
                     <td><a href="/event/{{ event[0] }}">{{ event[1] }}</a></td>
                     <td>{{ event[2] }}</td>
                     <td>{{ event[3] }}</td>
-                    <td><button class="btn btn-primary" value="{{ event[0] }}">Participate</button>
-                        <button class="btn btn-primary" value="{{ event[0] }}">Maybe Participate</button>
-                        <button class="btn btn-primary" value="{{ event[0] }}">Don't Participate</button>
-                    </td>
                 </tr>
                 {% endfor %}
             </table>
@@ -58,21 +54,4 @@
     </div>
 </div>
 
-<script>
-    $(document).ready(function(){
-        $(":button").click(function(){
-            jQuery.ajax({
-                url: '/rsvp',
-                type: "POST",
-                data: JSON.stringify({
-                    'event': $(this).attr("value"),
-                    'status': $(this).text()
-                }),
-                dataType: "json",
-                contentType: "application/json; charset=utf-8",
-                success: function(){}
-            });
-        });
-    });
-</script>
 {% endblock %}
