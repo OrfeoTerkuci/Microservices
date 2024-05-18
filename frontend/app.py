@@ -175,7 +175,7 @@ def calendar():
         except requests.exceptions.ConnectionError:
             response = None
 
-        if response and succesful_request(response):
+        if response is not None and succesful_request(response):
             events = [
                 invite["eventId"]
                 for invite in response.json()["invites"]
@@ -207,7 +207,7 @@ def calendar():
         except requests.exceptions.ConnectionError:
             response = None
 
-        if response and succesful_request(response):
+        if response is not None and succesful_request(response):
             events = [
                 (rsvp["eventId"], rsvp["status"])
                 for rsvp in response.json()["responses"]
@@ -359,6 +359,7 @@ def view_event(eventid):
             event["organizer"],
             "Public" if event["isPublic"] else "Private",
             participants,
+            event["id"],
         ]
     else:
         event = None  # No success, so don't fetch the data
@@ -452,7 +453,7 @@ def invites():
     except requests.exceptions.ConnectionError:
         response = None
 
-    if response and succesful_request(response):
+    if response is not None and succesful_request(response):
         events = [
             invite["eventId"]
             for invite in response.json()["invites"]
@@ -537,7 +538,7 @@ def rsvp():
         response = None
 
     # If the user received an invite, update the invite
-    if response and succesful_request(response):
+    if response is not None and succesful_request(response):
         try:
             # If the user received an invite, update the invite
             requests.put(
@@ -558,7 +559,7 @@ def rsvp():
     except requests.exceptions.ConnectionError:
         response = None
     try:
-        if response and not succesful_request(response):
+        if response is not None and not succesful_request(response):
             # If it doesn't exist, create it
             requests.post(
                 "http://backend:8000/api/rsvp",
