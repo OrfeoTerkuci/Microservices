@@ -48,10 +48,13 @@ def authenticate_user(username: str, password: str) -> Optional[User]:
     :param password: Password
     :return: UserModel if user is found, None otherwise
     """
-    if (user := find_user(username=username)) and verify_password(
-        password, str(user.password)
-    ):
-        return user
+    try:
+        if (user := find_user(username=username)) and verify_password(
+            password, str(user.password)
+        ):
+            return user
+    except ValueError:
+        return None
     return None
 
 
