@@ -140,6 +140,12 @@ def add_shared_calendar(calendar: CalendarShareModel):
     :returns: The shared calendar.
     """
     try:
+        if get_shared_calendar(calendar.sharingUser, calendar.receivingUser):
+            return Response(
+                status_code=status.HTTP_409_CONFLICT,
+                content=json.dumps({"error": "Calendar already shared"}),
+                media_type="application/json",
+            )
         share_calendar(
             sharingUser=calendar.sharingUser, receivingUser=calendar.receivingUser
         )
@@ -171,6 +177,12 @@ def remove_shared_calendar(sharingUser: str, receivingUser: str):
     :param calendar: The calendar to delete.
     """
     try:
+        if not get_shared_calendar(sharingUser, receivingUser):
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Calendar not found"}),
+                media_type="application/json",
+            )
         delete_shared_calendar(sharingUser, receivingUser)
     except Exception as exc:
         return Response(

@@ -81,6 +81,12 @@ def create_rsvp(response: RsvpResponseModel):
     Create a new response
     """
     try:
+        if find_response(response.eventId, response.username):
+            return Response(
+                status_code=status.HTTP_409_CONFLICT,
+                content=json.dumps({"error": "Response already exists"}),
+                media_type="application/json",
+            )
         create_response(response.eventId, response.username, response.status)
     except Exception as exc:
         return Response(
@@ -109,6 +115,12 @@ def update_rsvp(response: RsvpResponseModel):
     Update a response
     """
     try:
+        if not find_response(response.eventId, response.username):
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Response not found"}),
+                media_type="application/json",
+            )
         update_response(response.eventId, response.username, response.status)
     except Exception as exc:
         return Response(
@@ -138,6 +150,12 @@ def delete_rsvp(eventId: int, username: str):
     """
 
     try:
+        if not find_response(eventId, username):
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Response not found"}),
+                media_type="application/json",
+            )
         delete_response(eventId, username)
     except Exception as exc:
         return Response(

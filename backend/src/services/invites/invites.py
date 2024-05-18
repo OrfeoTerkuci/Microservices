@@ -89,6 +89,12 @@ def add_invite(invite: InviteModel):
     Create invite
     """
     try:
+        if find_invite(invite.eventId, invite.username):
+            return Response(
+                status_code=status.HTTP_409_CONFLICT,
+                content=json.dumps({"error": "Invite already exists"}),
+                media_type="application/json",
+            )
         create_invite(invite.eventId, invite.username, invite.status)
         return Response(
             status_code=status.HTTP_201_CREATED,
@@ -117,6 +123,12 @@ def update_invite_status(invite: InviteModel):
     Update invite status
     """
     try:
+        if not find_invite(invite.eventId, invite.username):
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Invite not found"}),
+                media_type="application/json",
+            )
         update_invite(invite.eventId, invite.username, invite.status)
         return Response(
             status_code=status.HTTP_200_OK,
@@ -145,6 +157,12 @@ def remove_invite(eventId: int, username: str):
     Remove invite
     """
     try:
+        if not find_invite(eventId, username):
+            return Response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=json.dumps({"error": "Invite not found"}),
+                media_type="application/json",
+            )
         delete_invite(eventId, username)
         return Response(
             status_code=status.HTTP_200_OK,
